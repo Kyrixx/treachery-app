@@ -10,6 +10,12 @@ export interface Card {
   artist: string
 }
 
+// code is a translation key suffix, see error_* in i18n.ts
+export interface AppError {
+  code: string
+  params?: Record<string, string | number>
+}
+
 export interface Settings {
   playerCount: number
   rarities: Rarity[]
@@ -36,7 +42,7 @@ export type ServerMsg =
   | { type: 'welcome'; code: string; playerId: string; token: string }
   | RoomView
   | { type: 'you'; role: Role; card: Card }
-  | { type: 'error'; message: string }
+  | { type: 'error'; error: AppError }
 
 export type ClientMsg =
   | { type: 'create'; nickname: string; playerCount: number; rarities: Rarity[] }

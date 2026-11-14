@@ -66,7 +66,8 @@ Dockerfile, docker-compose.yml, Caddyfile
 ```
 - `main.go` sert `web/dist` via `//go:embed` et `http.FileServerFS`. Toute route inconnue renvoie `index.html`. WebSocket sur `/ws`.
 - Pas de router React : l'URL `/r/ABCD` est lue depuis `location.pathname`.
-- CSS simple mobile-first, pas de lib UI. UI en français.
+- CSS simple mobile-first, pas de lib UI.
+- i18n maison (`web/src/i18n.ts`, FR + EN), langue du navigateur par défaut, sélecteur dans le pied de page. Le serveur renvoie des codes d'erreur, jamais du texte.
 - Concurrence : un seul `sync.Mutex` global sur la map des rooms. `// ponytail: mutex global, un mutex par room si beaucoup de rooms simultanées.`
 - Aléatoire : `math/rand/v2` (graine cryptographique par défaut).
 
@@ -90,7 +91,7 @@ Dockerfile, docker-compose.yml, Caddyfile
 
 ### Protocole WebSocket (JSON, `{type, ...}`)
 - Client → serveur : `create {nickname, playerCount, rarities}`, `join {code, nickname}`, `resume {code, token}`, `ready {value}`, `start`, `reset`.
-- Serveur → client : `welcome {code, playerId, token}`, `room {players, settings, phase, hostId, leader?}`, `you {role, card}` (seulement au joueur concerné), `error {message}`.
+- Serveur → client : `welcome {code, playerId, token}`, `room {players, settings, phase, hostId, leader?}`, `you {role, card}` (seulement au joueur concerné), `error {error: {code, params}}`.
 - Validation à l'entrée : pseudo 1–20 caractères, code `[A-Z]{4}`, nombre 4–8, raretés ⊂ {U,R,M,S}, taille de message limitée.
 - Types dupliqués : structs Go dans `room.go`, types TS dans `web/src/types.ts`.
 

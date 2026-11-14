@@ -118,3 +118,5 @@ input {
 .role-Leader { color: var(--accent); }
 
 footer { margin-top: 16px; font-size: 0.75rem; color: var(--muted); text-align: center; line-height: 1.5; }
+.langs { display: flex; justify-content: center; gap: 4px; }
+.langs .on { color: var(--accent); font-weight: 600; }

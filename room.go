@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
-	"errors"
 	mrand "math/rand/v2"
 	"net/http"
 	"slices"
@@ -130,7 +129,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 		}
 		s.mu.Lock()
 		if err := s.handle(cl, &m); err != nil {
-			cl.write(map[string]string{"type": "error", "message": err.Error()})
+			cl.write(map[string]any{"type": "error", "error": err})
 		}
 		s.mu.Unlock()
 	}
@@ -174,14 +173,14 @@ func (s *Server) handle(cl *client, m *inMsg) error {
 			return err
 		}
 		if room.Phase != "lobby" {
-			return errors.New("la partie a déjà commencé")
+			return fail("gameStarted")
 		}
 		if len(room.Players) >= room.Settings.PlayerCount {
-			return errors.New("la room est pleine")
+			return fail("roomFull")
 		}
 		for _, p := range room.Players {
 			if strings.EqualFold(p.Name, name) {
-				return errors.New("ce pseudo est déjà pris dans la room")
+				return fail("nicknameTaken")
 			}
 		}
 		p := newPlayer(name)
@@ -194,7 +193,7 @@ func (s *Server) handle(cl *client, m *inMsg) error {
 		}
 		i := slices.IndexFunc(room.Players, func(p *Player) bool { return p.token == m.Token })
 		if i < 0 {
-			return errors.New("place introuvable dans cette room")
+			return fail("seatNotFound")
 		}
 		s.attach(cl, room, room.Players[i])
 	case "ready":
@@ -209,10 +208,10 @@ func (s *Server) handle(cl *client, m *inMsg) error {
 			return nil
 		}
 		if len(room.Players) != room.Settings.PlayerCount {
-			return errors.New("la room n'est pas pleine")
+			return fail("roomNotFull")
 		}
 		if slices.ContainsFunc(room.Players, func(p *Player) bool { return !p.Ready }) {
-			return errors.New("tout le monde n'est pas prêt")
+			return fail("notAllReady")
 		}
 		hand, err := draw(room.Settings.PlayerCount, room.Settings.Rarities)
 		if err != nil {
@@ -321,7 +320,7 @@ func (s *Server) sweep(now time.Time) {
 func (s *Server) find(code string) (*Room, error) {
 	room, ok := s.rooms[strings.ToUpper(strings.TrimSpace(code))]
 	if !ok {
-		return nil, errors.New("room introuvable")
+		return nil, fail("roomNotFound")
 	}
 	return room, nil
 }
@@ -345,7 +344,7 @@ func newPlayer(name string) *Player {
 func cleanName(s string) (string, error) {
 	s = strings.TrimSpace(s)
 	if n := utf8.RuneCountInString(s); n < 1 || n > 20 {
-		return "", errors.New("le pseudo doit faire entre 1 et 20 caractères")
+		return "", fail("invalidNickname")
 	}
 	return s, nil
 }

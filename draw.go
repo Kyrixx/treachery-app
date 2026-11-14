@@ -3,8 +3,6 @@ package main
 import (
 	_ "embed"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"math/rand/v2"
 	"slices"
 )
@@ -30,6 +28,16 @@ var allCards = func() []Card {
 
 var roles = []string{"Leader", "Traitor", "Assassin", "Guardian"}
 
+// appError carries a translation key; the client renders the text (web/src/i18n.ts).
+type appError struct {
+	Code   string         `json:"code"`
+	Params map[string]any `json:"params,omitempty"`
+}
+
+func (e *appError) Error() string { return e.Code }
+
+func fail(code string) error { return &appError{Code: code} }
+
 // distribution follows the official table (CR 907.3c), same order as roles.
 var distribution = map[int][4]int{
 	4: {1, 1, 2, 0},
@@ -40,8 +48,6 @@ var distribution = map[int][4]int{
 }
 
 var allRarities = []string{"U", "R", "M", "S"}
-
-var roleFR = map[string]string{"Leader": "Leader", "Traitor": "Traître", "Assassin": "Assassin", "Guardian": "Gardien"}
 
 func pool(role string, rarities []string) []Card {
 	var out []Card
@@ -56,19 +62,19 @@ func pool(role string, rarities []string) []Card {
 func validateSettings(playerCount int, rarities []string) error {
 	counts, ok := distribution[playerCount]
 	if !ok {
-		return errors.New("le nombre de joueurs doit être entre 4 et 8")
+		return fail("invalidPlayerCount")
 	}
 	if len(rarities) == 0 {
-		return errors.New("choisis au moins une rareté")
+		return fail("noRarity")
 	}
 	for _, r := range rarities {
 		if !slices.Contains(allRarities, r) {
-			return fmt.Errorf("rareté inconnue : %q", r)
+			return &appError{"unknownRarity", map[string]any{"rarity": r}}
 		}
 	}
 	for i, role := range roles {
 		if have := len(pool(role, rarities)); have < counts[i] {
-			return fmt.Errorf("pas assez d'identités %s avec ces raretés (%d pour %d)", roleFR[role], have, counts[i])
+			return &appError{"notEnoughIdentities", map[string]any{"role": role, "have": have, "need": counts[i]}}
 		}
 	}
 	return nil

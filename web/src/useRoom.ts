@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Card, ClientMsg, RoomView, ServerMsg } from './types'
+import type { AppError, Card, ClientMsg, RoomView, ServerMsg } from './types'
 
 interface Session {
   code: string
@@ -35,7 +35,7 @@ export function useRoom() {
   const [room, setRoom] = useState<RoomView | null>(null)
   const [me, setMe] = useState<Card | null>(null)
   const [playerId, setPlayerId] = useState(loadSession()?.playerId ?? '')
-  const [error, setError] = useState('')
+  const [error, setError] = useState<AppError | null>(null)
   const [kicked, setKicked] = useState(false)
   const ws = useRef<WebSocket | null>(null)
   const resuming = useRef(false)
@@ -64,7 +64,7 @@ export function useRoom() {
             resuming.current = false
             saveSession({ code: msg.code, playerId: msg.playerId, token: msg.token })
             setPlayerId(msg.playerId)
-            setError('')
+            setError(null)
             history.replaceState(null, '', `/r/${msg.code}`)
             break
           case 'room':
@@ -82,10 +82,10 @@ export function useRoom() {
               setPlayerId('')
               setRoom(null)
               setMe(null)
-              setError('Ta place dans la room a expiré. Rejoins-la à nouveau.')
+              setError({ code: 'seatExpired' })
               break
             }
-            setError(msg.message)
+            setError(msg.error)
             break
         }
       }
@@ -119,7 +119,7 @@ export function useRoom() {
 
   const send = (msg: ClientMsg) => {
     if (ws.current?.readyState !== WebSocket.OPEN) return
-    setError('')
+    setError(null)
     ws.current.send(JSON.stringify(msg))
   }
 

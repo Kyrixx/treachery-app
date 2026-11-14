@@ -93,7 +93,7 @@ func TestGameFlowKeepsIdentitiesSecret(t *testing.T) {
 	}
 	host.waitFor("room", playersReady(3))
 	host.send(map[string]any{"type": "start"})
-	if e := host.waitFor("error", nil); !strings.Contains(e["message"].(string), "prêt") {
+	if e := host.waitFor("error", nil); errCode(e) != "notAllReady" {
 		t.Fatalf("start with a player not ready: %v", e)
 	}
 
@@ -159,7 +159,9 @@ func TestResumeReturnsSameCard(t *testing.T) {
 
 	bad := dial(t, srv)
 	bad.send(map[string]any{"type": "resume", "code": code, "token": "nope"})
-	bad.waitFor("error", nil)
+	if e := bad.waitFor("error", nil); errCode(e) != "seatNotFound" {
+		t.Fatalf("got %v", e)
+	}
 }
 
 func TestJoinRejectsFullRoom(t *testing.T) {
@@ -168,7 +170,7 @@ func TestJoinRejectsFullRoom(t *testing.T) {
 	code, _, _ := setupRoom(t, srv)
 	late := dial(t, srv)
 	late.send(map[string]any{"type": "join", "code": code, "nickname": "Eve"})
-	if e := late.waitFor("error", nil); !strings.Contains(e["message"].(string), "pleine") {
+	if e := late.waitFor("error", nil); errCode(e) != "roomFull" {
 		t.Fatalf("got %v", e)
 	}
 }
@@ -178,8 +180,13 @@ func TestCreateRejectsImpossibleSettings(t *testing.T) {
 	defer srv.Close()
 	c := dial(t, srv)
 	c.send(map[string]any{"type": "create", "nickname": "Alice", "playerCount": 8, "rarities": []string{"S"}})
-	c.waitFor("error", nil)
+	e := c.waitFor("error", nil)["error"].(map[string]any)
+	if e["code"] != "notEnoughIdentities" || e["params"].(map[string]any)["role"] != "Leader" {
+		t.Fatalf("got %v", e)
+	}
 }
+
+func errCode(m map[string]any) any { return m["error"].(map[string]any)["code"] }
 
 func TestSweepKeepsBrieflyAwayPlayers(t *testing.T) {
 	s := NewServer()

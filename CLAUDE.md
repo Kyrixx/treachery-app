@@ -9,6 +9,7 @@ Tirage de rôles/identités Treachery (MTG) en temps réel, pour un groupe d'ami
 
 ## Règles à respecter
 - Secret des identités : le serveur n'envoie jamais à un client la carte d'un autre joueur, sauf celle du Leader. `TestGameFlowKeepsIdentitiesSecret` le vérifie.
+- Aucun texte affiché en dur : tout passe par `web/src/i18n.ts` (`en` = référence, `fr` typé `Record<Key, string>` donc complet). Le serveur n'envoie que des codes d'erreur (`appError{Code, Params}`), traduits côté client via `error_<code>` ; `TestEveryErrorCodeIsTranslated` le vérifie.
 - Le format des messages WS est dupliqué : structs dans `room.go`, types dans `web/src/types.ts`. Modifier les deux.
 - Un mutex global protège tout l'état ; `handle` est appelé sous ce verrou.
 - `web/dist/.gitkeep` est commité et Vite a `emptyOutDir: false` : `go build` marche sur un clone neuf.
