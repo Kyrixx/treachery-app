@@ -147,12 +147,16 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	conn.CloseNow()
 }
 
-// logAttrs never includes tokens or cards: whoever reads the logs may be playing.
+// logAttrs includes tokens and cards on purpose: a friends-only app, debugging beats secrecy here.
 func (cl *client) logAttrs() []any {
 	if cl.player == nil {
 		return nil
 	}
-	return []any{"room", cl.room.Code, "player", cl.player.Name, "phase", cl.room.Phase}
+	attrs := []any{"room", cl.room.Code, "player", cl.player.Name, "phase", cl.room.Phase, "token", cl.player.token}
+	if c := cl.player.card; c != nil {
+		attrs = append(attrs, "role", c.Role, "card", c.Name)
+	}
+	return attrs
 }
 
 func (cl *client) write(v any) {
@@ -235,6 +239,7 @@ func (s *Server) handle(cl *client, m *inMsg) error {
 		}
 		for i, p := range room.Players {
 			p.card = &hand[i]
+			slog.Info("dealt", "room", room.Code, "player", p.Name, "role", p.card.Role, "card", p.card.Name)
 		}
 		room.Phase = "playing"
 		s.broadcast(room)

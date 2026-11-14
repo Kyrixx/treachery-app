@@ -26,7 +26,7 @@ func (w *syncBuffer) String() string {
 	return w.b.String()
 }
 
-func TestLogsNeverLeakTokensOrCards(t *testing.T) {
+func TestLogsShowGameEventsTokensAndDealtCards(t *testing.T) {
 	var out syncBuffer
 	prev := slog.Default()
 	slog.SetDefault(slog.New(slog.NewTextHandler(&out, nil)))
@@ -47,18 +47,21 @@ func TestLogsNeverLeakTokensOrCards(t *testing.T) {
 	late := dial(t, srv)
 	late.send(map[string]any{"type": "join", "code": code, "nickname": "Late"})
 	late.waitFor("error", nil)
+
 	logs := out.String()
-	if !strings.Contains(logs, "msg=start") || !strings.Contains(logs, "room="+code) || !strings.Contains(logs, "msg=rejected") {
-		t.Fatalf("expected game events in logs:\n%s", logs)
+	for _, want := range []string{"msg=start", "room=" + code, "msg=rejected", "error=gameStarted"} {
+		if !strings.Contains(logs, want) {
+			t.Fatalf("missing %q in logs:\n%s", want, logs)
+		}
 	}
 	for _, w := range welcomes {
-		if strings.Contains(logs, w["token"].(string)) {
-			t.Fatal("a token leaked into the logs")
+		if !strings.Contains(logs, w["token"].(string)) {
+			t.Fatal("a player's token is missing from the logs")
 		}
 	}
 	for _, name := range cards {
-		if strings.Contains(logs, name) {
-			t.Fatalf("card %q leaked into the logs", name)
+		if !strings.Contains(logs, name) {
+			t.Fatalf("dealt card %q is missing from the logs", name)
 		}
 	}
 }
