@@ -85,6 +85,7 @@ button:disabled { cursor: default; }
   border-radius: 0;
   width: 100%;
 }
+.nick-hint { margin: 6px 0 0; }
 .nick input:focus { outline: none; border-bottom-color: var(--gold); }
 .code-boxes { display: flex; flex-direction: column; gap: 10px; }
 .boxes { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }

@@ -101,6 +101,7 @@ function Home({ connected, send, openGuide }: { connected: boolean; send: Send; 
   const [codeFocus, setCodeFocus] = useState(false)
   const [creating, setCreating] = useState(false)
   const nick = nickname.trim()
+  const nickHintId = useId()
   const [creditsBefore, creditsAfter] = t('credits').split('{site}')
 
   const remember = () => {
@@ -135,8 +136,20 @@ function Home({ connected, send, openGuide }: { connected: boolean; send: Send; 
       />
       <label className="nick">
         <span className="caption">{t('nickname')}</span>
-        <input value={nickname} onChange={(e) => setNickname(e.target.value)} maxLength={20} autoComplete="nickname" />
+        <input
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          maxLength={20}
+          autoComplete="nickname"
+          required
+          aria-describedby={nick ? undefined : nickHintId}
+        />
       </label>
+      {!nick && (
+        <p className="nick-hint muted italic small" id={nickHintId}>
+          {t('nicknameRequired')}
+        </p>
+      )}
 
       <form
         className="push"

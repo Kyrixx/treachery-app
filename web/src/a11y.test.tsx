@@ -97,3 +97,17 @@ describe('accessibility', () => {
     expect(document.activeElement).toBe(link)
   })
 })
+
+describe('nickname', () => {
+  it('says the nickname is required until one is typed', () => {
+    render(<App />)
+    act(() => FakeSocket.last.serverOpen())
+    const input = screen.getByRole('textbox', { name: 'nickname' })
+    expect(input).toHaveProperty('required', true)
+    const hint = document.getElementById(input.getAttribute('aria-describedby')!)
+    expect(hint?.textContent).toBe('Required to join or create a room.')
+    fireEvent.change(input, { target: { value: 'Alice' } })
+    expect(input.getAttribute('aria-describedby')).toBeNull()
+    expect(screen.queryByText('Required to join or create a room.')).toBeNull()
+  })
+})
