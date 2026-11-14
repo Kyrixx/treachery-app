@@ -208,7 +208,7 @@ button:disabled { cursor: default; }
   visibility: hidden;
 }
 .reveal.shown { visibility: visible; }
-.leader-view .reveal.shown { pointer-events: auto; cursor: pointer; }
+.closable .reveal.shown { pointer-events: auto; cursor: pointer; }
 .reveal > * { width: 100%; max-width: 440px; margin-left: auto; margin-right: auto; }
 .role { margin-top: 18px; font-size: 68px; font-weight: 800; line-height: 1; }
 .role-Leader { color: var(--gold); }
@@ -234,3 +234,37 @@ button:disabled { cursor: default; }
 .toasts { position: fixed; top: env(safe-area-inset-top); left: 0; right: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 16px; pointer-events: none; }
 .toast { max-width: 440px; width: 100%; background: var(--panel); border: 1px solid var(--line); padding: 10px 14px; font-style: italic; color: var(--muted); }
 .toast.error { border-color: var(--danger); color: var(--text); font-style: normal; }
+
+/* Guide: rules and card gallery */
+.guide-links { margin-top: 12px; display: flex; justify-content: center; align-items: center; gap: 10px; color: var(--faint); }
+.guide-links .link { min-height: 44px; font-size: 15px; }
+.guide {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background: var(--bg);
+  overflow-y: auto;
+  padding: env(safe-area-inset-top) 20px max(24px, env(safe-area-inset-bottom));
+}
+.guide > * { max-width: 440px; margin-left: auto; margin-right: auto; }
+.guide > .bar { position: sticky; top: 0; background: var(--bg); z-index: 1; }
+.tabs { display: flex; gap: 16px; }
+.tabs .on { color: var(--gold); }
+.rules p { margin-top: 8px; line-height: 1.5; }
+.rules h2 { display: block; font-weight: 500; }
+.dist { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 15px; }
+.dist th, .dist td { border-bottom: 1px solid var(--line); padding: 8px 4px; text-align: center; }
+.dist thead th { font: 500 13px var(--sc); letter-spacing: 0.04em; vertical-align: bottom; }
+.dist thead th:first-child { color: var(--muted); }
+.dist tbody th { font-size: 20px; font-weight: 700; }
+.dist td { font-size: 18px; font-weight: 600; }
+.dist .zero { color: var(--faint); font-weight: 400; }
+.wins { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.wins div { border-left: 1px solid var(--line); padding-left: 12px; }
+.wins dt { font-weight: 700; }
+.wins dd { margin: 2px 0 0; line-height: 1.45; }
+.full-rules { margin-top: 24px; }
+.gallery-role { margin: 28px 0 0; font-size: 32px; font-weight: 800; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.gallery-rarity { display: flex; align-items: center; gap: 10px; margin: 16px 0 8px; font-weight: 500; }
+.thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.thumbs img { width: 100%; display: block; aspect-ratio: 63 / 88; object-fit: cover; background: var(--panel); }

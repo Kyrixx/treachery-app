@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { codeFromUrl, useRoom } from './useRoom'
 import { LANGS, setLang, useI18n } from './i18n'
-import type { Card, Rarity, RoomView } from './types'
+import { useCatalog } from './catalog'
+import { roleOrder, type Card, type Rarity, type Role, type RoomView } from './types'
 
 const RARITIES: Rarity[] = ['U', 'R', 'M', 'S']
 const CARD_COUNT = 62
@@ -16,10 +17,13 @@ function storedNick() {
 }
 
 type Send = ReturnType<typeof useRoom>['send']
+type GuidePage = 'rules' | 'cards'
+type OpenGuide = (page: GuidePage) => void
 
 export default function App() {
   const r = useRoom()
   const { t, error } = useI18n()
+  const [guide, setGuide] = useState<GuidePage | null>(null)
 
   let screen: ReactNode
   if (r.kicked) {
@@ -30,11 +34,11 @@ export default function App() {
       </>
     )
   } else if (!r.room || !r.playerId) {
-    screen = <Home connected={r.connected} send={r.send} />
+    screen = <Home connected={r.connected} send={r.send} openGuide={setGuide} />
   } else if (r.room.phase === 'lobby') {
-    screen = <Lobby room={r.room} playerId={r.playerId} send={r.send} leave={r.leave} />
+    screen = <Lobby room={r.room} playerId={r.playerId} send={r.send} leave={r.leave} openGuide={setGuide} />
   } else {
-    screen = <Game room={r.room} playerId={r.playerId} me={r.me} send={r.send} leave={r.leave} />
+    screen = <Game room={r.room} playerId={r.playerId} me={r.me} send={r.send} leave={r.leave} openGuide={setGuide} />
   }
 
   return (
@@ -46,6 +50,7 @@ export default function App() {
         </div>
       )}
       {screen}
+      {guide && <Guide page={guide} setPage={setGuide} close={() => setGuide(null)} />}
     </main>
   )
 }
@@ -67,7 +72,22 @@ function Diamond({ className = '', color }: { className?: string; color?: string
   return <span className={`diamond ${className}`} style={color ? { background: color } : undefined} />
 }
 
-function Home({ connected, send }: { connected: boolean; send: Send }) {
+function GuideLinks({ open }: { open: OpenGuide }) {
+  const { t } = useI18n()
+  return (
+    <p className="guide-links">
+      <button className="link underline" onClick={() => open('rules')}>
+        {t('rules')}
+      </button>
+      <span aria-hidden>·</span>
+      <button className="link underline" onClick={() => open('cards')}>
+        {t('cards')}
+      </button>
+    </p>
+  )
+}
+
+function Home({ connected, send, openGuide }: { connected: boolean; send: Send; openGuide: OpenGuide }) {
   const { t, lang } = useI18n()
   const [nickname, setNickname] = useState(storedNick)
   const [code, setCode] = useState(codeFromUrl)
@@ -149,6 +169,7 @@ function Home({ connected, send }: { connected: boolean; send: Send }) {
           {t('createTitle')}
         </button>
       </div>
+      <GuideLinks open={openGuide} />
       <p className="credits">
         {creditsBefore}
         <a href={`https://mtgtreachery.net/${lang}/`} target="_blank" rel="noreferrer">
@@ -219,7 +240,19 @@ function Create({
   )
 }
 
-function Lobby({ room, playerId, send, leave }: { room: RoomView; playerId: string; send: Send; leave: () => void }) {
+function Lobby({
+  room,
+  playerId,
+  send,
+  leave,
+  openGuide,
+}: {
+  room: RoomView
+  playerId: string
+  send: Send
+  leave: () => void
+  openGuide: OpenGuide
+}) {
   const { t, rarity } = useI18n()
   const me = room.players.find((p) => p.id === playerId)
   const isHost = room.hostId === playerId
@@ -283,6 +316,7 @@ function Lobby({ room, playerId, send, leave }: { room: RoomView; playerId: stri
           </span>
         ))}
       </p>
+      <GuideLinks open={openGuide} />
 
       <div className="actions push">
         <button className={me?.ready ? 'outline' : 'cta gold'} onClick={() => send({ type: 'ready', value: !me?.ready })}>
@@ -333,12 +367,14 @@ function Game({
   me,
   send,
   leave,
+  openGuide,
 }: {
   room: RoomView
   playerId: string
   me: Card | null
   send: Send
   leave: () => void
+  openGuide: OpenGuide
 }) {
   const { t, role } = useI18n()
   const [shown, setShown] = useState(false)
@@ -370,7 +406,7 @@ function Game({
         </section>
       )}
       {leader && (
-        <div className="leader-view" onClick={() => setLeaderShown(false)}>
+        <div className="closable" onClick={() => setLeaderShown(false)}>
           <Reveal card={leader.card} heading={t('leaderOf', { name: leaderName })} hint={t('tapToClose')} shown={leaderShown} />
         </div>
       )}
@@ -392,11 +428,141 @@ function Game({
       )}
 
       <p className="muted roster">{room.players.map((p) => p.name).join(' · ')}</p>
+      <GuideLinks open={openGuide} />
       {room.hostId === playerId && (
         <button className="outline" onClick={() => confirm(t('confirmNewGame')) && send({ type: 'reset' })}>
           {t('newGame')}
         </button>
       )}
     </>
+  )
+}
+
+function Guide({ page, setPage, close }: { page: GuidePage; setPage: OpenGuide; close: () => void }) {
+  const { t } = useI18n()
+  const { catalog, failed } = useCatalog()
+  return (
+    <div className="guide" role="dialog" aria-modal>
+      <Bar
+        left={<button className="link" onClick={close}>← {t('back')}</button>}
+        right={
+          <span className="tabs">
+            {(['rules', 'cards'] as const).map((p) => (
+              <button key={p} className={`link sc ${p === page ? 'on' : ''}`} onClick={() => setPage(p)} aria-pressed={p === page}>
+                {t(p)}
+              </button>
+            ))}
+          </span>
+        }
+      />
+      {failed ? (
+        <p className="notice">{t('catalogError')}</p>
+      ) : !catalog ? (
+        <p className="notice">{t('loading')}</p>
+      ) : page === 'rules' ? (
+        <Rules distribution={catalog.distribution} />
+      ) : (
+        <Gallery cards={catalog.cards} />
+      )}
+    </div>
+  )
+}
+
+const WIN_ORDER: Role[] = ['Leader', 'Guardian', 'Assassin', 'Traitor']
+
+function Rules({ distribution }: { distribution: Record<string, number[]> }) {
+  const { t, role } = useI18n()
+  return (
+    <article className="rules">
+      <h2 className="caption gap">{t('rulesSetupTitle')}</h2>
+      <p>{t('rulesSetup')}</p>
+
+      <h2 className="caption gap">{t('distributionTitle')}</h2>
+      <table className="dist">
+        <thead>
+          <tr>
+            <th>{t('players')}</th>
+            {roleOrder.map((r) => (
+              <th key={r} className={`role-${r}`}>
+                {role(r)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(distribution).map(([n, counts]) => (
+            <tr key={n}>
+              <th>{n}</th>
+              {counts.map((c, i) => (
+                <td key={roleOrder[i]} className={c ? '' : 'zero'}>
+                  {c}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h2 className="caption gap">{t('rulesWinTitle')}</h2>
+      <dl className="wins">
+        {WIN_ORDER.map((r) => (
+          <div key={r}>
+            <dt className={`role-${r}`}>{role(r)}</dt>
+            <dd>{t(`win_${r}`)}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <h2 className="caption gap">{t('rulesUnveilTitle')}</h2>
+      <p>{t('rulesUnveil')}</p>
+      <p>{t('rulesDeath')}</p>
+
+      <h2 className="caption gap">{t('rarities')}</h2>
+      <p>{t('rulesRarity')}</p>
+
+      <p className="full-rules">
+        <a href="https://mtgtreachery.net/rules/cr/" target="_blank" rel="noreferrer">
+          {t('fullRules')}
+        </a>
+      </p>
+    </article>
+  )
+}
+
+function Gallery({ cards }: { cards: Card[] }) {
+  const { t, role, rarity } = useI18n()
+  const [open, setOpen] = useState<Card | null>(null)
+  return (
+    <div className="gallery">
+      {WIN_ORDER.map((r) => (
+        <section key={r} aria-label={role(r)}>
+          <h2 className={`gallery-role role-${r}`}>{role(r)}</h2>
+          {RARITIES.map((rar) => {
+            const group = cards.filter((c) => c.role === r && c.rarity === rar)
+            if (group.length === 0) return null
+            return (
+              <section key={rar} aria-label={`${role(r)} ${rarity(rar)}`}>
+                <h3 className="caption gallery-rarity">
+                  <Diamond color={RARITY_COLOR[rar]} />
+                  {rarity(rar)} · {group.length}
+                </h3>
+                <div className="thumbs">
+                  {group.map((c) => (
+                    <button key={c.id} onClick={() => setOpen(c)}>
+                      <img src={`/cards/${c.id}.jpg`} alt={c.name} loading="lazy" />
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )
+          })}
+        </section>
+      ))}
+      {open && (
+        <div className="closable" onClick={() => setOpen(null)}>
+          <Reveal card={open} heading={t('cards')} hint={t('tapToClose')} shown />
+        </div>
+      )}
+    </div>
   )
 }

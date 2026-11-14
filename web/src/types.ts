@@ -51,3 +51,10 @@ export type ClientMsg =
   | { type: 'ready'; value: boolean }
   | { type: 'start' }
   | { type: 'reset' }
+
+// GET /api/catalog; distribution is keyed by player count, in roleOrder.
+export interface Catalog {
+  cards: Card[]
+  distribution: Record<string, [number, number, number, number]>
+}
+export const roleOrder: Role[] = ['Leader', 'Traitor', 'Assassin', 'Guardian']
