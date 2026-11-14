@@ -1,0 +1,436 @@
+[
+  {
+    "id": 1,
+    "name": "The Ætherist",
+    "role": "Guardian",
+    "rarity": "R",
+    "artist": "Roggles (Rogie Custodio) @ DeviantArt"
+  },
+  {
+    "id": 2,
+    "name": "The Augur",
+    "role": "Guardian",
+    "rarity": "R",
+    "artist": "lorlandchain (Chen Wei) @ DeviantArt"
+  },
+  {
+    "id": 3,
+    "name": "The Bodyguard",
+    "role": "Guardian",
+    "rarity": "U",
+    "artist": "Hokunin (Prokopii Osipov) @ DeviantArt"
+  },
+  {
+    "id": 4,
+    "name": "The Cathar",
+    "role": "Guardian",
+    "rarity": "U",
+    "artist": "akizhao @ DeviantArt"
+  },
+  {
+    "id": 5,
+    "name": "The Cryomancer",
+    "role": "Guardian",
+    "rarity": "R",
+    "artist": "OPOA @ Pinterest"
+  },
+  {
+    "id": 6,
+    "name": "The Flickering Mage",
+    "role": "Guardian",
+    "rarity": "U",
+    "artist": "Zolaida (Lisa Buijteweg) @ DeviantArt"
+  },
+  {
+    "id": 7,
+    "name": "The Golem",
+    "role": "Guardian",
+    "rarity": "U",
+    "artist": "Michael Phillippi @ DeviantArt"
+  },
+  {
+    "id": 8,
+    "name": "The Great Martyr",
+    "role": "Guardian",
+    "rarity": "M",
+    "artist": "Jason Engle @ DeviantArt"
+  },
+  {
+    "id": 9,
+    "name": "The Immortal",
+    "role": "Guardian",
+    "rarity": "U",
+    "artist": "malisaa @ DeviantArt"
+  },
+  {
+    "id": 10,
+    "name": "The Inquisitor",
+    "role": "Guardian",
+    "rarity": "U",
+    "artist": "Asahisuperdry @ DeviantArt"
+  },
+  {
+    "id": 11,
+    "name": "The Marshal",
+    "role": "Guardian",
+    "rarity": "R",
+    "artist": "Diego Gisbert Llorens @ DeviantArt"
+  },
+  {
+    "id": 12,
+    "name": "The Mirror Maestra",
+    "role": "Guardian",
+    "rarity": "U",
+    "artist": "Anne Stokes"
+  },
+  {
+    "id": 13,
+    "name": "The Oracle",
+    "role": "Guardian",
+    "rarity": "M",
+    "artist": "GENZOMAN (Gonzalo Ordóñez Arias) @ DeviantArt"
+  },
+  {
+    "id": 14,
+    "name": "The Quellmaster",
+    "role": "Guardian",
+    "rarity": "R",
+    "artist": "Kekai @ CGHUB"
+  },
+  {
+    "id": 15,
+    "name": "The Spellsnatcher",
+    "role": "Guardian",
+    "rarity": "R",
+    "artist": "bpsola (Bryan Marvin P. Sola) @ DeviantArt"
+  },
+  {
+    "id": 16,
+    "name": "The Summoner",
+    "role": "Guardian",
+    "rarity": "R",
+    "artist": "Kevin Glint @ ArtStation"
+  },
+  {
+    "id": 17,
+    "name": "The Supplier",
+    "role": "Guardian",
+    "rarity": "M",
+    "artist": "Kieran Yanner"
+  },
+  {
+    "id": 18,
+    "name": "The Warlock",
+    "role": "Guardian",
+    "rarity": "M",
+    "artist": "Hokunin (Prokopii Osipov) @ DeviantArt"
+  },
+  {
+    "id": 19,
+    "name": "The Banisher",
+    "role": "Traitor",
+    "rarity": "U",
+    "artist": "Astri Lohne @ ArtStation"
+  },
+  {
+    "id": 20,
+    "name": "The Cleaner",
+    "role": "Traitor",
+    "rarity": "R",
+    "artist": "Snook-8 @ DeviantArt"
+  },
+  {
+    "id": 21,
+    "name": "The Ferryman",
+    "role": "Traitor",
+    "rarity": "M",
+    "artist": "Andrew Hou"
+  },
+  {
+    "id": 22,
+    "name": "The Gatekeeper",
+    "role": "Traitor",
+    "rarity": "U",
+    "artist": "Pierluigi Abbondanza @ DeviantArt"
+  },
+  {
+    "id": 23,
+    "name": "The Grenadier",
+    "role": "Traitor",
+    "rarity": "U",
+    "artist": "Kekai @ CGHUB"
+  },
+  {
+    "id": 24,
+    "name": "He Who Comes To Save The Day",
+    "role": "Traitor",
+    "rarity": "M",
+    "artist": "Kekai @ CGHUB"
+  },
+  {
+    "id": 25,
+    "name": "The Metamorph",
+    "role": "Traitor",
+    "rarity": "S",
+    "artist": "Myrmirada (Anna Verhoog) @ DeviantArt"
+  },
+  {
+    "id": 26,
+    "name": "The Oneiromancer",
+    "role": "Traitor",
+    "rarity": "U",
+    "artist": "Hamsterfly (Viktor Titov) @ DeviantArt"
+  },
+  {
+    "id": 27,
+    "name": "The Puppet Master",
+    "role": "Traitor",
+    "rarity": "S",
+    "artist": "fuuryoku (Thom Scott) @ DeviantArt"
+  },
+  {
+    "id": 28,
+    "name": "The Reflector",
+    "role": "Traitor",
+    "rarity": "R",
+    "artist": "LeeJJ (Jon Lee) @ DeviantArt"
+  },
+  {
+    "id": 29,
+    "name": "The Time Bender",
+    "role": "Traitor",
+    "rarity": "R",
+    "artist": "Bob Khel"
+  },
+  {
+    "id": 30,
+    "name": "The Treacherous Masochist",
+    "role": "Traitor",
+    "rarity": "S",
+    "artist": "Roman Baramzin @ ArtStation"
+  },
+  {
+    "id": 31,
+    "name": "The Wearer of Masks",
+    "role": "Traitor",
+    "rarity": "S",
+    "artist": "moonxels (David Demaret) @ DeviantArt"
+  },
+  {
+    "id": 32,
+    "name": "The Ambitious Queen",
+    "role": "Assassin",
+    "rarity": "U",
+    "artist": "88grzes (Grzegorz Rutkowski) @ DeviantArt"
+  },
+  {
+    "id": 33,
+    "name": "The Beastmaster",
+    "role": "Assassin",
+    "rarity": "U",
+    "artist": "Smolin (Nick Avallone) @ DeviantArt"
+  },
+  {
+    "id": 34,
+    "name": "The Bio-Engineer",
+    "role": "Assassin",
+    "rarity": "M",
+    "artist": "Ushihachi"
+  },
+  {
+    "id": 35,
+    "name": "The Chaos Wielder",
+    "role": "Assassin",
+    "rarity": "U",
+    "artist": "ericbraddock @ DeviantArt"
+  },
+  {
+    "id": 36,
+    "name": "The Corpse Snatcher",
+    "role": "Assassin",
+    "rarity": "R",
+    "artist": "rk post"
+  },
+  {
+    "id": 37,
+    "name": "The Demon",
+    "role": "Assassin",
+    "rarity": "U",
+    "artist": "KipcaHT @ DeviantArt"
+  },
+  {
+    "id": 38,
+    "name": "The Depths Caller",
+    "role": "Assassin",
+    "rarity": "M",
+    "artist": "Gerald Brom"
+  },
+  {
+    "id": 39,
+    "name": "The Madwoman",
+    "role": "Assassin",
+    "rarity": "R",
+    "artist": "Anna Ignatieva"
+  },
+  {
+    "id": 40,
+    "name": "The Necromancer",
+    "role": "Assassin",
+    "rarity": "R",
+    "artist": "Athayar (Nicolas Vallée) @ DeviantArt"
+  },
+  {
+    "id": 41,
+    "name": "The Physician",
+    "role": "Assassin",
+    "rarity": "R",
+    "artist": "gameriuxlt @ DeviantArt"
+  },
+  {
+    "id": 42,
+    "name": "The Pyromancer",
+    "role": "Assassin",
+    "rarity": "R",
+    "artist": "Andantonius (Jon Neimeister) @ DeviantArt"
+  },
+  {
+    "id": 43,
+    "name": "The Rebel General",
+    "role": "Assassin",
+    "rarity": "R",
+    "artist": "larbesta @ DeviantArt"
+  },
+  {
+    "id": 44,
+    "name": "The Seer",
+    "role": "Assassin",
+    "rarity": "U",
+    "artist": "DM7 (Martin MeKenzie) @ DeviantArt"
+  },
+  {
+    "id": 45,
+    "name": "The Shapeshifting Slayer",
+    "role": "Assassin",
+    "rarity": "M",
+    "artist": "Matjosh (Andrius Matijosius) @ DeviantArt"
+  },
+  {
+    "id": 46,
+    "name": "The Sigil Mage",
+    "role": "Assassin",
+    "rarity": "U",
+    "artist": "Peter Orullian"
+  },
+  {
+    "id": 47,
+    "name": "The Sorceress",
+    "role": "Assassin",
+    "rarity": "U",
+    "artist": "Bluefley (Marc Brunet)"
+  },
+  {
+    "id": 48,
+    "name": "The Villain",
+    "role": "Assassin",
+    "rarity": "R",
+    "artist": "sbraithwaite @ DeviantArt"
+  },
+  {
+    "id": 49,
+    "name": "The War Shaman",
+    "role": "Assassin",
+    "rarity": "R",
+    "artist": "Bob Khel @ DeviantArt"
+  },
+  {
+    "id": 50,
+    "name": "The Blood Empress",
+    "role": "Leader",
+    "rarity": "U",
+    "artist": "rkpost"
+  },
+  {
+    "id": 51,
+    "name": "The Chaos Bringer",
+    "role": "Leader",
+    "rarity": "M",
+    "artist": "One Vox"
+  },
+  {
+    "id": 52,
+    "name": "The Corrupted Regent",
+    "role": "Leader",
+    "rarity": "R",
+    "artist": "ArchLimit (Leo Li) @ DeviantArt"
+  },
+  {
+    "id": 53,
+    "name": "The Debt Collector",
+    "role": "Leader",
+    "rarity": "M",
+    "artist": "Grafitart @ CGHUB"
+  },
+  {
+    "id": 54,
+    "name": "The Gathering",
+    "role": "Leader",
+    "rarity": "M",
+    "artist": "HarryBuddhaPalm (Justin Reed) @ DeviantArt"
+  },
+  {
+    "id": 55,
+    "name": "Her Seedborn Highness",
+    "role": "Leader",
+    "rarity": "U",
+    "artist": "Jason Engle @ DeviantArt"
+  },
+  {
+    "id": 56,
+    "name": "His Beloved Majesty",
+    "role": "Leader",
+    "rarity": "M",
+    "artist": "Armandeo @ Terminally Incoherent"
+  },
+  {
+    "id": 57,
+    "name": "The King over the Scrapyard",
+    "role": "Leader",
+    "rarity": "R",
+    "artist": "Ralph Horsley @ DeviantArt"
+  },
+  {
+    "id": 58,
+    "name": "The Lich Queen",
+    "role": "Leader",
+    "rarity": "M",
+    "artist": "DavidBlac @ DeviantArt"
+  },
+  {
+    "id": 59,
+    "name": "The Old Ruler",
+    "role": "Leader",
+    "rarity": "U",
+    "artist": "AnthonyFoti (Tony Foti) @ DeviantArt"
+  },
+  {
+    "id": 60,
+    "name": "The Queen of Light",
+    "role": "Leader",
+    "rarity": "U",
+    "artist": "Jason Engle @ DeviantArt"
+  },
+  {
+    "id": 61,
+    "name": "The Twin Princesses",
+    "role": "Leader",
+    "rarity": "R",
+    "artist": "phoenixlu @ DeviantArt"
+  },
+  {
+    "id": 62,
+    "name": "The Void Tyrant",
+    "role": "Leader",
+    "rarity": "U",
+    "artist": "Grivetart (Bastien Grivet) @ DeviantArt"
+  }
+]
