@@ -84,7 +84,7 @@ Dockerfile, docker-compose.yml, Caddyfile
 
 ### Reconnexion et cycle de vie
 - À l'arrivée, le serveur donne `playerId` + `token` secret, stockés en `localStorage`. À la reconnexion, le client renvoie le token et récupère l'état et sa carte.
-- Avant tirage, un joueur déconnecté plus de 30 s quitte le lobby. Après tirage, il garde sa place.
+- Avant tirage, un joueur déconnecté plus de 5 min quitte le lobby. Après tirage, il garde sa place.
 - Rooms supprimées après 6 h sans activité (un `time.Ticker`).
 - Pas de transfert d'hôte : l'hôte revient via son token.
 

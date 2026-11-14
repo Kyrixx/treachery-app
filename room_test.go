@@ -180,3 +180,21 @@ func TestCreateRejectsImpossibleSettings(t *testing.T) {
 	c.send(map[string]any{"type": "create", "nickname": "Alice", "playerCount": 8, "rarities": []string{"S"}})
 	c.waitFor("error", nil)
 }
+
+func TestSweepKeepsBrieflyAwayPlayers(t *testing.T) {
+	s := NewServer()
+	now := time.Now()
+	host, away, gone := newPlayer("Alice"), newPlayer("Bob"), newPlayer("Chloé")
+	host.client = &client{send: make(chan []byte, 32)}
+	away.leftAt = now.Add(-time.Minute)
+	gone.leftAt = now.Add(-lobbyGrace - time.Second)
+	s.rooms["ABCD"] = &Room{Code: "ABCD", Phase: "lobby", HostID: host.ID, Players: []*Player{host, away, gone}, touched: now}
+
+	s.sweep(now)
+	if got := len(s.rooms["ABCD"].Players); got != 2 {
+		t.Fatalf("got %d players, want 2 (only the one away past lobbyGrace removed)", got)
+	}
+	if lobbyGrace < 5*time.Minute {
+		t.Fatalf("lobbyGrace = %v: locked phones on the table must not lose their seat", lobbyGrace)
+	}
+}

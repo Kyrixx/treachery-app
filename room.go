@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	lobbyGrace  = 30 * time.Second
+	lobbyGrace  = 5 * time.Minute
 	roomTTL     = 6 * time.Hour
 	codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ"
 )
