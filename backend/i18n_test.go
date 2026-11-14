@@ -8,7 +8,7 @@ import (
 
 // Server errors are translation keys rendered by the client: each one needs an error_<code> entry.
 func TestEveryErrorCodeIsTranslated(t *testing.T) {
-	dict, err := os.ReadFile("web/src/i18n.ts")
+	dict, err := os.ReadFile("../web/src/i18n.ts")
 	if err != nil {
 		t.Fatal(err)
 	}

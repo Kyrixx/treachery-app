@@ -1,5 +1,5 @@
 // Command fetchcards downloads the Treachery identity list and card images
-// from mtgtreachery.net into cards.json and web/public/cards/. Run once:
+// from mtgtreachery.net into backend/cards.json and web/public/cards/. Run once:
 //
 //	go run ./tools/fetchcards
 package main
@@ -63,7 +63,7 @@ func main() {
 	}
 
 	out, _ := json.MarshalIndent(cards, "", "  ")
-	if err := os.WriteFile("cards.json", append(out, '\n'), 0o644); err != nil {
+	if err := os.WriteFile("backend/cards.json", append(out, '\n'), 0o644); err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("%d cards written", len(cards))

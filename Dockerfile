@@ -9,9 +9,10 @@ FROM golang:1.27-alpine AS server
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
-COPY *.go cards.json ./
+COPY embed.go ./
+COPY backend/ ./backend/
 COPY --from=web /src/web/dist ./web/dist
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /treachery . && mkdir /data
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /treachery ./backend && mkdir /data
 
 FROM gcr.io/distroless/static:nonroot
 COPY --from=server /treachery /treachery

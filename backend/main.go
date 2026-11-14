@@ -2,23 +2,21 @@ package main
 
 import (
 	"cmp"
-	"embed"
 	"encoding/json"
 	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
-)
 
-//go:embed all:web/dist
-var dist embed.FS
+	"treachery"
+)
 
 // catalogJSON is public data (the site lists every card); secrecy is about who holds which one.
 var catalogJSON, _ = json.Marshal(map[string]any{"cards": allCards, "distribution": distribution})
 
 func routes(s *Server) http.Handler {
-	static, _ := fs.Sub(dist, "web/dist")
+	static, _ := fs.Sub(treachery.Web, "web/dist")
 	files := http.FileServerFS(static)
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ws", s.handleWS)

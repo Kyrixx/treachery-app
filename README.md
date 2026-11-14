@@ -10,8 +10,8 @@ Requirements: Go 1.27, Node 26 (`nvm use`).
 
 ```sh
 cd web && npm install && npm run build && cd ..   # once: go:embed needs web/dist
-go run .                                          # server on :8080
-cd web && npm run dev                             # frontend on :5173, proxies /ws to :8080
+go run ./backend                                  # server on :8080
+cd web && npm run dev                             # frontend on :5173, proxies /ws and /api to :8080
 ```
 
 Tests: `go test -race ./...` and `cd web && npm test && npm run typecheck`.

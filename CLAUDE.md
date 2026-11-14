@@ -3,7 +3,8 @@
 Real-time role and identity draw for the MTG Treachery variant, for a group of friends playing around one table, each on their phone.
 
 ## Stack and versions
-- Backend: Go 1.27, `main` package at the repo root (`main.go`, `room.go`, `draw.go`). Only dependency: `github.com/coder/websocket`.
+- Backend: Go 1.27, `main` package in `backend/` (`main.go`, `room.go`, `draw.go`, `persist.go`, `cards.json`, tests). Only dependency: `github.com/coder/websocket`.
+- `go.mod` and `embed.go` (package `treachery`, exposes `Web`) stay at the root: `go:embed` cannot reach `../web/dist` from `backend/`.
 - Frontend: React 19 + Vite 8 + TypeScript 7 in `web/`, built into `web/dist` and embedded with `go:embed`.
 - Always target the latest stable versions (check online, not from memory).
 
@@ -23,5 +24,6 @@ Real-time role and identity draw for the MTG Treachery variant, for a group of f
 - `go test -race ./...`
 - `cd web && npm test` (Vitest + jsdom; `FakeSocket` in `web/src/test/` drives the WebSocket)
 - `cd web && npm run build` / `npm run dev` / `npm run typecheck`
-- `go run ./tools/fetchcards`: regenerates `cards.json` and the images
+- `go run ./backend`: server on :8080 (needs `web/dist` built once)
+- `go run ./tools/fetchcards`: regenerates `backend/cards.json` and the images
 - CI (`.github/workflows/ci.yml`) tests every push/PR and publishes `ghcr.io/tchapuis/treachery-app` from `main`
