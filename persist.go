@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/fs"
-	"log"
+	"log/slog"
 	"os"
 	"time"
 )
@@ -43,7 +43,7 @@ func (s *Server) load(path string, now time.Time) {
 		err = json.Unmarshal(data, &saved)
 	}
 	if err != nil {
-		log.Printf("ignoring room snapshot %s: %v", path, err)
+		slog.Error("ignoring room snapshot", "file", path, "error", err)
 		return
 	}
 	for _, sr := range saved {
@@ -54,7 +54,7 @@ func (s *Server) load(path string, now time.Time) {
 		}
 		s.rooms[room.Code] = room
 	}
-	log.Printf("restored %d rooms from %s", len(saved), path)
+	slog.Info("rooms restored", "count", len(saved), "file", path)
 }
 
 // save must be called with s.mu held.
@@ -75,10 +75,10 @@ func (s *Server) save() {
 	// write then rename so a crash mid-write never leaves a truncated snapshot
 	tmp := s.file + ".tmp"
 	if err := os.WriteFile(tmp, data, 0o600); err != nil {
-		log.Printf("saving rooms: %v", err)
+		slog.Error("saving rooms failed", "error", err)
 		return
 	}
 	if err := os.Rename(tmp, s.file); err != nil {
-		log.Printf("saving rooms: %v", err)
+		slog.Error("saving rooms failed", "error", err)
 	}
 }

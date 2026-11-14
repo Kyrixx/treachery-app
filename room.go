@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"log/slog"
 	mrand "math/rand/v2"
 	"net/http"
 	"slices"
@@ -95,6 +96,7 @@ func NewServer() *Server { return &Server{rooms: map[string]*Room{}} }
 func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: []string{"localhost:*"}})
 	if err != nil {
+		slog.Warn("websocket accept failed", "error", err)
 		return
 	}
 	conn.SetReadLimit(4096)
@@ -126,12 +128,15 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 		}
 		var m inMsg
 		if json.Unmarshal(data, &m) != nil {
+			slog.Warn("invalid message", cl.logAttrs()...)
 			continue
 		}
 		s.mu.Lock()
 		if err := s.handle(cl, &m); err != nil {
+			slog.Warn("rejected", append([]any{"type", m.Type, "error", err}, cl.logAttrs()...)...)
 			cl.write(map[string]any{"type": "error", "error": err})
 		} else {
+			slog.Info(m.Type, cl.logAttrs()...)
 			s.save()
 		}
 		s.mu.Unlock()
@@ -140,6 +145,14 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	s.disconnect(cl)
 	s.mu.Unlock()
 	conn.CloseNow()
+}
+
+// logAttrs never includes tokens or cards: whoever reads the logs may be playing.
+func (cl *client) logAttrs() []any {
+	if cl.player == nil {
+		return nil
+	}
+	return []any{"room", cl.room.Code, "player", cl.player.Name, "phase", cl.room.Phase}
 }
 
 func (cl *client) write(v any) {
@@ -266,6 +279,7 @@ func (s *Server) disconnect(cl *client) {
 	if cl.player == nil || cl.player.client != cl {
 		return
 	}
+	slog.Info("disconnected", cl.logAttrs()...)
 	cl.player.client = nil
 	cl.player.leftAt = time.Now()
 	s.broadcast(cl.room)
@@ -303,6 +317,7 @@ func (s *Server) sweep(now time.Time) {
 	}()
 	for code, room := range s.rooms {
 		if now.Sub(room.touched) > roomTTL {
+			slog.Info("room expired", "room", code)
 			delete(s.rooms, code)
 			changed = true
 			continue
@@ -312,9 +327,14 @@ func (s *Server) sweep(now time.Time) {
 		}
 		before := len(room.Players)
 		room.Players = slices.DeleteFunc(room.Players, func(p *Player) bool {
-			return p.client == nil && now.Sub(p.leftAt) > lobbyGrace
+			gone := p.client == nil && now.Sub(p.leftAt) > lobbyGrace
+			if gone {
+				slog.Info("player dropped from lobby", "room", code, "player", p.Name)
+			}
+			return gone
 		})
 		if len(room.Players) == 0 {
+			slog.Info("empty lobby removed", "room", code)
 			delete(s.rooms, code)
 			changed = true
 			continue
@@ -323,6 +343,7 @@ func (s *Server) sweep(now time.Time) {
 			changed = true
 			if !slices.ContainsFunc(room.Players, func(p *Player) bool { return p.ID == room.HostID }) {
 				room.HostID = room.Players[0].ID
+				slog.Info("host transferred", "room", code, "player", room.Players[0].Name)
 			}
 			s.broadcast(room)
 		}

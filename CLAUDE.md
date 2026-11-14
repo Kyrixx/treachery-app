@@ -12,6 +12,7 @@ Real-time role and identity draw for the MTG Treachery variant, for a group of f
 - No hardcoded UI text: everything goes through `web/src/i18n.ts` (`en` is the reference, `fr` is typed `Record<Key, string>` so it must be complete). The server only sends error codes (`appError{Code, Params}`), translated client-side via `error_<code>`; `TestEveryErrorCodeIsTranslated` enforces it.
 - Cards and the role distribution live only in Go (`cards.json`, `distribution` in `draw.go`); the client reads them from `GET /api/catalog` (rules page, card gallery). Don't copy them into TS.
 - The WebSocket message format is duplicated: Go structs in `room.go`, TS types in `web/src/types.ts`. Change both.
+- Logs use `log/slog` (one line per handled message via `client.logAttrs`). Never log tokens, cards or roles: the operator may be playing. `TestLogsNeverLeakTokensOrCards` enforces it.
 - One global mutex guards all state; `handle` runs under that lock and is followed by `save()`.
 - Rooms survive restarts via a JSON snapshot (`persist.go`, `DATA_FILE`). Snapshot types (`savedRoom`, `savedPlayer`) hold tokens and cards: never send them to clients. New `Player`/`Room` fields must be added to the snapshot too.
 - `web/dist/.gitkeep` is committed and Vite uses `emptyOutDir: false`, so `go build` works on a fresh clone.

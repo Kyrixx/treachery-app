@@ -5,7 +5,7 @@ import (
 	"embed"
 	"encoding/json"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -44,6 +44,7 @@ func main() {
 		}
 	}()
 	addr := ":" + cmp.Or(os.Getenv("PORT"), "8080")
-	log.Printf("listening on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, routes(s)))
+	slog.Info("listening", "addr", addr)
+	slog.Error("server stopped", "error", http.ListenAndServe(addr, routes(s)))
+	os.Exit(1)
 }
