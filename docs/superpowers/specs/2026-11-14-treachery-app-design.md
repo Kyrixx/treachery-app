@@ -119,7 +119,7 @@ Dockerfile, docker-compose.yml, Caddyfile
 - `draw_test.go` (golden path) : pour 4 à 8 joueurs, les comptes de rôles respectent le tableau ; identités distinctes ; bon rôle ; rareté autorisée.
 - `draw_test.go` (cas limites) : `feasible` faux pour 8 joueurs avec seulement S ; vrai pour 8 joueurs avec U seul ; `draw` renvoie une erreur si infaisable.
 - `room_test.go` (intégration WS via `httptest.NewServer`) : 4 clients rejoignent, se mettent prêts, l'hôte lance ; chaque client reçoit exactement un `you` avec sa carte ; aucun message `room` ne contient d'identité autre que celle du Leader. `start` refusé si un joueur n'est pas prêt. `resume` avec le token rend la même carte.
-- Front : pas de tests automatisés au départ, vérification manuelle (ci-dessous).
+- Front : Vitest + jsdom + Testing Library. `useRoom` (reprise de session, reconnexion, socket remplacé ignoré), `i18n` (interpolation, changement de langue, erreurs serveur), écran de jeu (Leader visible, carte révélée seulement pendant l'appui).
 
 ## Vérification de bout en bout
 

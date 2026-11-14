@@ -13,7 +13,7 @@ go run .                                          # serveur sur :8080
 cd web && npm run dev                             # front sur :5173, proxy /ws → :8080
 ```
 
-Tests : `go test -race ./...` et `cd web && npm run typecheck`.
+Tests : `go test -race ./...` et `cd web && npm test && npm run typecheck`.
 
 Pour rafraîchir les cartes depuis mtgtreachery.net : `go run ./tools/fetchcards`.
 

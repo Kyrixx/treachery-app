@@ -17,6 +17,7 @@ Tirage de rôles/identités Treachery (MTG) en temps réel, pour un groupe d'ami
 
 ## Commandes
 - `go test -race ./...`
+- `cd web && npm test` (Vitest + jsdom ; `FakeSocket` dans `web/src/test/` pour piloter le WebSocket)
 - `cd web && npm run build` / `npm run dev` / `npm run typecheck`
 - `go run ./tools/fetchcards` : régénère `cards.json` et les images
 - `docker compose up -d --build` avec `DOMAIN` dans `.env`
