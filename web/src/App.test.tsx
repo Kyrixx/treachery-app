@@ -40,30 +40,38 @@ function startGame() {
 }
 
 describe('Game screen', () => {
-  it('shows the Leader to everyone with artist credit', () => {
+  it('shows the Leader to everyone, with artist credit on the full card', () => {
     startGame()
-    expect(screen.getByText('Leader: Bob')).toBeTruthy()
-    expect(screen.getByText('Illustration: Other')).toBeTruthy()
+    expect(screen.getByText('Bob')).toBeTruthy()
+    expect(screen.getByText('The Void Tyrant')).toBeTruthy()
+    const full = screen.getByText('leader: Bob').closest('.reveal')!
+    expect(full.className).not.toContain('shown')
+    fireEvent.click(screen.getByText('See'))
+    expect(full.className).toContain('shown')
+    expect(screen.getByText('062/062 · m · ill. Other')).toBeTruthy()
   })
 
   it('reveals the secret card only while held', () => {
     startGame()
-    const secret = screen.getByText('Press and hold to see your card').parentElement!
-    expect(secret.className).not.toContain('shown')
+    const secret = screen.getByText('Hold to reveal').parentElement!
+    const reveal = screen.getByText('your identity').closest('.reveal')!
+    expect(reveal.className).not.toContain('shown')
 
     fireEvent.pointerDown(secret)
-    expect(secret.className).toContain('shown')
+    expect(reveal.className).toContain('shown')
     expect(screen.getByText('Guardian')).toBeTruthy()
+    expect(screen.getByText('007/062 · u · ill. Someone')).toBeTruthy()
 
     fireEvent.pointerUp(secret)
-    expect(secret.className).not.toContain('shown')
+    expect(reveal.className).not.toContain('shown')
   })
 
   it('hides the secret card again when the finger slides off', () => {
     startGame()
-    const secret = screen.getByText('Press and hold to see your card').parentElement!
+    const secret = screen.getByText('Hold to reveal').parentElement!
+    const reveal = screen.getByText('your identity').closest('.reveal')!
     fireEvent.pointerDown(secret)
     fireEvent.pointerLeave(secret)
-    expect(secret.className).not.toContain('shown')
+    expect(reveal.className).not.toContain('shown')
   })
 })

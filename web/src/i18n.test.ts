@@ -7,14 +7,14 @@ afterEach(() => act(() => setLang('en')))
 describe('i18n', () => {
   it('interpolates params', () => {
     const { result } = renderHook(() => useI18n())
-    expect(result.current.t('playersCount', { n: 3, max: 5 })).toBe('Players 3/5')
+    expect(result.current.t('freeSeats', { n: 3 })).toBe('free seats: 3')
   })
 
   it('switches language, re-renders and remembers the choice', () => {
     const { result } = renderHook(() => useI18n())
     act(() => setLang('fr'))
     expect(result.current.lang).toBe('fr')
-    expect(result.current.t('join')).toBe('Rejoindre')
+    expect(result.current.t('join')).toBe('rejoindre')
     expect(document.documentElement.lang).toBe('fr')
     expect(localStorage.getItem('treachery:lang')).toBe('fr')
   })

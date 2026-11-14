@@ -4,6 +4,7 @@ import { LANGS, setLang, useI18n } from './i18n'
 import type { Card, Rarity, RoomView } from './types'
 
 const RARITIES: Rarity[] = ['U', 'R', 'M', 'S']
+const CARD_COUNT = 62
 const NICK_KEY = 'treachery:nickname'
 
 function storedNick() {
@@ -14,161 +15,216 @@ function storedNick() {
   }
 }
 
+type Send = ReturnType<typeof useRoom>['send']
+
 export default function App() {
   const r = useRoom()
-  const { t, lang, error } = useI18n()
-  const [creditsBefore, creditsAfter] = t('credits').split('{site}')
+  const { t, error } = useI18n()
 
   let screen: ReactNode
   if (r.kicked) {
-    screen = <p className="notice">{t('kicked')}</p>
+    screen = (
+      <>
+        <Bar left={<Brand />} />
+        <p className="notice">{t('kicked')}</p>
+      </>
+    )
   } else if (!r.room || !r.playerId) {
     screen = <Home connected={r.connected} send={r.send} />
   } else if (r.room.phase === 'lobby') {
-    screen = <Lobby room={r.room} playerId={r.playerId} send={r.send} />
+    screen = <Lobby room={r.room} playerId={r.playerId} send={r.send} leave={r.leave} />
   } else {
-    screen = <Game room={r.room} playerId={r.playerId} me={r.me} send={r.send} />
+    screen = <Game room={r.room} playerId={r.playerId} me={r.me} send={r.send} leave={r.leave} />
   }
 
   return (
-    <main>
-      <header>
-        <h1>Treachery</h1>
-        {r.room && (
-          <button className="link" onClick={r.leave}>
-            {t('leave')}
-          </button>
-        )}
-      </header>
-      {!r.connected && !r.kicked && <p className="notice">{t('connecting')}</p>}
-      {r.error && <p className="error">{error(r.error)}</p>}
+    <main className="screen">
+      {(r.error || (!r.connected && !r.kicked)) && (
+        <div className="toasts">
+          {!r.connected && !r.kicked && <p className="toast">{t('connecting')}</p>}
+          {r.error && <p className="toast error">{error(r.error)}</p>}
+        </div>
+      )}
       {screen}
-      <footer>
-        <p>
-          {creditsBefore}
-          <a href={`https://mtgtreachery.net/${lang}/`} target="_blank" rel="noreferrer">
-            mtgtreachery.net
-          </a>
-          {creditsAfter}
-        </p>
-        <p className="langs">
-          {LANGS.map((l) => (
-            <button key={l} className={`link ${l === lang ? 'on' : ''}`} onClick={() => setLang(l)} aria-pressed={l === lang}>
-              {l.toUpperCase()}
-            </button>
-          ))}
-        </p>
-      </footer>
     </main>
   )
 }
 
-type Send = ReturnType<typeof useRoom>['send']
+function Bar({ left, right }: { left: ReactNode; right?: ReactNode }) {
+  return (
+    <header className="bar">
+      {left}
+      {right}
+    </header>
+  )
+}
+
+function Brand() {
+  return <span className="brand">Treachery</span>
+}
+
+function Diamond({ className = '', color }: { className?: string; color?: string }) {
+  return <span className={`diamond ${className}`} style={color ? { background: color } : undefined} />
+}
 
 function Home({ connected, send }: { connected: boolean; send: Send }) {
-  const { t, rarity, rarityHint } = useI18n()
+  const { t, lang } = useI18n()
   const [nickname, setNickname] = useState(storedNick)
   const [code, setCode] = useState(codeFromUrl)
-  const [playerCount, setPlayerCount] = useState(5)
-  const [rarities, setRarities] = useState<Rarity[]>(['U', 'R', 'M'])
+  const [codeFocus, setCodeFocus] = useState(false)
+  const [creating, setCreating] = useState(false)
   const nick = nickname.trim()
+  const [creditsBefore, creditsAfter] = t('credits').split('{site}')
 
   const remember = () => {
     try {
       localStorage.setItem(NICK_KEY, nick)
     } catch {}
   }
-  const toggle = (id: Rarity) => setRarities((rs) => (rs.includes(id) ? rs.filter((x) => x !== id) : [...rs, id]))
 
+  if (creating) {
+    return (
+      <Create
+        connected={connected}
+        back={() => setCreating(false)}
+        create={(playerCount, rarities) => {
+          remember()
+          send({ type: 'create', nickname: nick, playerCount, rarities })
+        }}
+      />
+    )
+  }
+
+  const nextLang = LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length]
   return (
     <>
-      <label className="field">
-        {t('nickname')}
+      <Bar
+        left={<Brand />}
+        right={
+          <button className="link sc" onClick={() => setLang(nextLang)} aria-label={t('language')}>
+            {lang}
+          </button>
+        }
+      />
+      <label className="nick">
+        <span className="caption">{t('nickname')}</span>
         <input value={nickname} onChange={(e) => setNickname(e.target.value)} maxLength={20} autoComplete="nickname" />
       </label>
 
-      <section className="panel">
-        <h2>{t('joinTitle')}</h2>
-        <form
-          className="row"
-          onSubmit={(e) => {
-            e.preventDefault()
-            remember()
-            send({ type: 'join', code: code.toUpperCase(), nickname: nick })
-          }}
-        >
-          <input
-            className="code-input"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
-            maxLength={4}
-            placeholder={t('codePlaceholder')}
-            autoCapitalize="characters"
-            aria-label={t('roomCode')}
-          />
-          <button disabled={!connected || !nick || code.length !== 4}>{t('join')}</button>
-        </form>
-      </section>
-
-      <section className="panel">
-        <h2>{t('createTitle')}</h2>
-        <p className="label">{t('playerCount')}</p>
-        <div className="segmented">
-          {[4, 5, 6, 7, 8].map((n) => (
-            <button key={n} className={n === playerCount ? 'on' : ''} onClick={() => setPlayerCount(n)}>
-              {n}
-            </button>
-          ))}
-        </div>
-        <p className="label">{t('rarities')}</p>
-        {RARITIES.map((id) => (
-          <label key={id} className="check">
-            <input type="checkbox" checked={rarities.includes(id)} onChange={() => toggle(id)} />
-            <span>
-              {rarity(id)} {rarityHint(id) && <small>({rarityHint(id)})</small>}
-            </span>
-          </label>
-        ))}
-        <button
-          className="primary"
-          disabled={!connected || !nick || rarities.length === 0}
-          onClick={() => {
-            remember()
-            send({ type: 'create', nickname: nick, playerCount, rarities })
-          }}
-        >
-          {t('create')}
+      <form
+        className="push"
+        onSubmit={(e) => {
+          e.preventDefault()
+          remember()
+          send({ type: 'join', code, nickname: nick })
+        }}
+      >
+        <label className="code-boxes">
+          <span className="caption">{t('roomCode')}</span>
+          <span className="boxes">
+            {[0, 1, 2, 3].map((i) => (
+              <span key={i} className={`box ${codeFocus && i === Math.min(code.length, 3) ? 'active' : ''}`}>
+                {code[i] ?? (codeFocus && i === code.length ? <span className="caret" /> : '')}
+              </span>
+            ))}
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4))}
+              onFocus={() => setCodeFocus(true)}
+              onBlur={() => setCodeFocus(false)}
+              maxLength={4}
+              autoCapitalize="characters"
+              autoComplete="off"
+            />
+          </span>
+        </label>
+        <button className="cta" disabled={!connected || !nick || code.length !== 4}>
+          {t('join')}
         </button>
-      </section>
+      </form>
+
+      <div className="split">
+        <span className="muted italic">{t('noCode')}</span>
+        <button className="link strong" disabled={!nick} onClick={() => setCreating(true)}>
+          {t('createTitle')}
+        </button>
+      </div>
+      <p className="credits">
+        {creditsBefore}
+        <a href={`https://mtgtreachery.net/${lang}/`} target="_blank" rel="noreferrer">
+          mtgtreachery.net
+        </a>
+        {creditsAfter}
+      </p>
     </>
   )
 }
 
-function Players({ room, playerId, showReady }: { room: RoomView; playerId: string; showReady: boolean }) {
-  const { t } = useI18n()
+const RARITY_COLOR: Record<Rarity, string> = { U: '#b8c0c6', R: '#d4b05a', M: '#e0703a', S: '#a98bd0' }
+
+function Create({
+  connected,
+  back,
+  create,
+}: {
+  connected: boolean
+  back: () => void
+  create: (playerCount: number, rarities: Rarity[]) => void
+}) {
+  const { t, rarity, rarityHint } = useI18n()
+  const [playerCount, setPlayerCount] = useState(5)
+  const [rarities, setRarities] = useState<Rarity[]>(['U', 'R', 'M'])
+  const toggle = (id: Rarity) => setRarities((rs) => (rs.includes(id) ? rs.filter((x) => x !== id) : [...rs, id]))
+
   return (
-    <ul className="players">
-      {room.players.map((p) => (
-        <li key={p.id} className={p.connected ? '' : 'away'}>
-          <span>
-            {p.name}
-            {p.id === playerId && ` ${t('you')}`}
-            {p.id === room.hostId && ' 👑'}
-          </span>
-          {showReady && <span>{p.ready ? t('ready') : '…'}</span>}
-          {!p.connected && <small>{t('disconnected')}</small>}
-        </li>
-      ))}
-    </ul>
+    <>
+      <Bar left={<button className="link" onClick={back}>← {t('back')}</button>} />
+      <h1 className="title">{t('createTitle')}</h1>
+      <p className="typeline">{t('createSubtitle')}</p>
+
+      <span className="caption gap">{t('players')}</span>
+      <div className="stepper">
+        <button onClick={() => setPlayerCount((n) => n - 1)} disabled={playerCount <= 4} aria-label={t('fewerPlayers')}>
+          −
+        </button>
+        <output>{playerCount}</output>
+        <button onClick={() => setPlayerCount((n) => n + 1)} disabled={playerCount >= 8} aria-label={t('morePlayers')}>
+          +
+        </button>
+      </div>
+      <span className="muted italic center small">{t('playerRange')}</span>
+
+      <span className="caption gap">{t('rarities')}</span>
+      <div className="rows">
+        {RARITIES.map((id) => {
+          const on = rarities.includes(id)
+          return (
+            <label key={id} className={`row ${on ? 'on' : ''}`}>
+              <Diamond color={RARITY_COLOR[id]} />
+              <span className="row-text">
+                <span className="row-name">{rarity(id)}</span>
+                {rarityHint(id) && <span className="muted italic small">{rarityHint(id)}</span>}
+              </span>
+              <input type="checkbox" checked={on} onChange={() => toggle(id)} />
+              <span className="check" />
+            </label>
+          )
+        })}
+      </div>
+
+      <button className="cta gold push" disabled={!connected || rarities.length === 0} onClick={() => create(playerCount, rarities)}>
+        {t('create')}
+      </button>
+    </>
   )
 }
 
-function Lobby({ room, playerId, send }: { room: RoomView; playerId: string; send: Send }) {
+function Lobby({ room, playerId, send, leave }: { room: RoomView; playerId: string; send: Send; leave: () => void }) {
   const { t, rarity } = useI18n()
   const me = room.players.find((p) => p.id === playerId)
   const isHost = room.hostId === playerId
-  const full = room.players.length === room.settings.playerCount
-  const allReady = full && room.players.every((p) => p.ready)
+  const free = room.settings.playerCount - room.players.length
+  const allReady = free === 0 && room.players.every((p) => p.ready)
   const url = `${location.origin}/r/${room.code}`
   const [copied, setCopied] = useState(false)
 
@@ -183,83 +239,163 @@ function Lobby({ room, playerId, send }: { room: RoomView; playerId: string; sen
 
   return (
     <>
-      <section className="panel center">
-        <p className="label">{t('roomCode')}</p>
-        <p className="code">{room.code}</p>
-        <button onClick={share}>{copied ? t('linkCopied') : t('shareLink')}</button>
-      </section>
-
-      <section className="panel">
-        <h2>{t('playersCount', { n: room.players.length, max: room.settings.playerCount })}</h2>
-        <Players room={room} playerId={playerId} showReady />
-        <p className="muted">{t('raritiesList', { list: room.settings.rarities.map(rarity).join(', ') })}</p>
-      </section>
-
-      <button className={me?.ready ? '' : 'primary'} onClick={() => send({ type: 'ready', value: !me?.ready })}>
-        {me?.ready ? t('notReadyAnymore') : t('imReady')}
+      <Bar
+        left={<button className="link" onClick={leave}>← {t('leave')}</button>}
+        right={<span className="sc">{room.players.length}/{room.settings.playerCount}</span>}
+      />
+      <span className="caption gap">{t('roomCode')}</span>
+      <span className="big-code">{room.code}</span>
+      <button className="outline" onClick={share}>
+        {copied ? t('linkCopied') : t('shareLink')}
       </button>
-      {isHost && (
-        <button className="primary" disabled={!allReady} onClick={() => send({ type: 'start' })}>
-          {allReady ? t('startDraw') : full ? t('waitingReady') : t('waitingPlayers')}
+
+      <span className="caption gap">{t('players')}</span>
+      <ul className="seats">
+        {room.players.map((p) => {
+          const notes = [
+            p.id === room.hostId && t('host'),
+            p.id === playerId && t('you'),
+            !p.ready && p.connected && t('notReady'),
+          ].filter(Boolean)
+          return (
+            <li key={p.id} className={p.connected ? '' : 'away'}>
+              <Diamond className={p.ready ? 'gold' : 'hollow'} />
+              <span className="seat-name">{p.name}</span>
+              {!p.connected ? (
+                <span className="note danger">{t('disconnected')}</span>
+              ) : (
+                notes.length > 0 && <span className="note">{notes.join(', ')}</span>
+              )}
+            </li>
+          )
+        })}
+        {Array.from({ length: free }, (_, i) => (
+          <li key={`free${i}`} className="free">
+            {t('freeSeat')}
+          </li>
+        ))}
+      </ul>
+      <p className="legend">
+        {room.settings.rarities.map((id) => (
+          <span key={id}>
+            <Diamond color={RARITY_COLOR[id]} />
+            {rarity(id)}
+          </span>
+        ))}
+      </p>
+
+      <div className="actions push">
+        <button className={me?.ready ? 'outline' : 'cta gold'} onClick={() => send({ type: 'ready', value: !me?.ready })}>
+          {me?.ready ? t('notReadyAnymore') : t('imReady')}
         </button>
-      )}
+        {isHost && (
+          <button className={`cta ${allReady ? 'gold' : ''}`} disabled={!allReady} onClick={() => send({ type: 'start' })}>
+            {t('startDraw')}
+            {!allReady && (
+              <span className="cta-note">· {free > 0 ? t('freeSeats', { n: free }) : t('waitingReady')}</span>
+            )}
+          </button>
+        )}
+      </div>
     </>
   )
 }
 
-function CardFace({ card }: { card: Card }) {
-  const { t } = useI18n()
+function Reveal({ card, heading, hint, shown }: { card: Card; heading: string; hint: string; shown: boolean }) {
+  const { t, role, rarity } = useI18n()
   return (
-    <figure className="card">
+    // always rendered so the image is loaded before the first reveal
+    <div className={`reveal ${shown ? 'shown' : ''}`} aria-hidden={!shown}>
+      <Bar left={<span className="caption">{heading}</span>} />
+      <p className={`role role-${card.role}`}>{role(card.role)}</p>
+      <p className="typeline">
+        {t('identityLine', { role: role(card.role) })} · {card.name}
+      </p>
       <img src={`/cards/${card.id}.jpg`} alt={card.name} draggable={false} />
-      <figcaption>{t('illustration', { artist: card.artist })}</figcaption>
-    </figure>
+      <p className="collector">
+        <span title={rarity(card.rarity)}>
+          {t('cardLine', {
+            num: String(card.id).padStart(3, '0'),
+            total: String(CARD_COUNT).padStart(3, '0'),
+            rarity: card.rarity.toLowerCase(),
+            artist: card.artist,
+          })}
+        </span>
+        <span>{hint}</span>
+      </p>
+    </div>
   )
 }
 
-function Game({ room, playerId, me, send }: { room: RoomView; playerId: string; me: Card | null; send: Send }) {
+function Game({
+  room,
+  playerId,
+  me,
+  send,
+  leave,
+}: {
+  room: RoomView
+  playerId: string
+  me: Card | null
+  send: Send
+  leave: () => void
+}) {
   const { t, role } = useI18n()
   const [shown, setShown] = useState(false)
-  const leaderName = room.players.find((p) => p.id === room.leader?.playerId)?.name
-  const iAmLeader = room.leader?.playerId === playerId
+  const [leaderShown, setLeaderShown] = useState(false)
+  const leader = room.leader
+  const leaderName = room.players.find((p) => p.id === leader?.playerId)?.name ?? ''
+  const hide = () => setShown(false)
 
   return (
     <>
-      {room.leader && (
-        <section className="panel leader">
-          <h2>{iAmLeader ? t('youAreLeader') : t('leaderIs', { name: leaderName ?? '' })}</h2>
-          <CardFace card={room.leader.card} />
-        </section>
-      )}
+      <Bar
+        left={<span className="sc">{t('roomTitle', { code: room.code })}</span>}
+        right={<button className="link" onClick={leave}>{t('leave')}</button>}
+      />
 
-      {me && !iAmLeader && (
-        <section className="panel center">
-          <h2>{t('secretIdentity')}</h2>
-          <div
-            className={`secret ${shown ? 'shown' : ''}`}
-            onPointerDown={() => setShown(true)}
-            onPointerUp={() => setShown(false)}
-            onPointerLeave={() => setShown(false)}
-            onPointerCancel={() => setShown(false)}
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            <p className="hold">{t('holdToReveal')}</p>
-            {/* always rendered so the image is loaded before the first reveal */}
-            <div className="reveal" aria-hidden={!shown}>
-              <p className={`role role-${me.role}`}>{role(me.role)}</p>
-              <CardFace card={me} />
+      {leader && (
+        <section className="leader">
+          <img src={`/cards/${leader.card.id}.jpg`} alt={leader.card.name} />
+          <div>
+            <div className="leader-top">
+              <span className="leader-name">{leaderName}</span>
+              <button className="link underline" onClick={() => setLeaderShown(true)}>
+                {t('see')}
+              </button>
             </div>
+            <span className="gold-text italic">{t('identityLine', { role: role('Leader') })}</span>
+            <span className="muted small">{leader.card.name}</span>
           </div>
         </section>
       )}
+      {leader && (
+        <div className="leader-view" onClick={() => setLeaderShown(false)}>
+          <Reveal card={leader.card} heading={t('leaderOf', { name: leaderName })} hint={t('tapToClose')} shown={leaderShown} />
+        </div>
+      )}
 
-      <section className="panel">
-        <h2>{t('players')}</h2>
-        <Players room={room} playerId={playerId} showReady={false} />
-      </section>
+      {me && (
+        <div
+          className="secret"
+          onPointerDown={() => setShown(true)}
+          onPointerUp={hide}
+          onPointerLeave={hide}
+          onPointerCancel={hide}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <Diamond className="hollow huge" />
+          <span className="hold">{t('holdToReveal')}</span>
+          <span className="muted italic">{t('holdHint')}</span>
+          <Reveal card={me} heading={t('yourIdentity')} hint={t('letGo')} shown={shown} />
+        </div>
+      )}
 
+      <p className="muted roster">{room.players.map((p) => p.name).join(' · ')}</p>
       {room.hostId === playerId && (
-        <button onClick={() => confirm(t('confirmNewGame')) && send({ type: 'reset' })}>{t('newGame')}</button>
+        <button className="outline" onClick={() => confirm(t('confirmNewGame')) && send({ type: 'reset' })}>
+          {t('newGame')}
+        </button>
       )}
     </>
   )
