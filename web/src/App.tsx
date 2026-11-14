@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { codeFromUrl, useRoom } from './useRoom'
 import { LANGS, setLang, useI18n } from './i18n'
 import { useCatalog } from './catalog'
@@ -43,12 +43,15 @@ export default function App() {
 
   return (
     <main className="screen">
-      {(r.error || (!r.connected && !r.kicked)) && (
-        <div className="toasts">
-          {!r.connected && !r.kicked && <p className="toast">{t('connecting')}</p>}
-          {r.error && <p className="toast error">{error(r.error)}</p>}
-        </div>
-      )}
+      {/* always mounted so screen readers announce what appears in it */}
+      <div className="toasts" role="status">
+        {!r.connected && !r.kicked && <p className="toast">{t('connecting')}</p>}
+        {r.error && (
+          <p className="toast error" role="alert">
+            {error(r.error)}
+          </p>
+        )}
+      </div>
       {screen}
       {guide && <Guide page={guide} setPage={setGuide} close={() => setGuide(null)} />}
     </main>
@@ -65,11 +68,15 @@ function Bar({ left, right }: { left: ReactNode; right?: ReactNode }) {
 }
 
 function Brand() {
-  return <span className="brand">Treachery</span>
+  return <h1 className="brand">Treachery</h1>
 }
 
 function Diamond({ className = '', color }: { className?: string; color?: string }) {
   return <span className={`diamond ${className}`} style={color ? { background: color } : undefined} />
+}
+
+function BackArrow() {
+  return <span aria-hidden>← </span>
 }
 
 function GuideLinks({ open }: { open: OpenGuide }) {
@@ -121,7 +128,7 @@ function Home({ connected, send, openGuide }: { connected: boolean; send: Send; 
       <Bar
         left={<Brand />}
         right={
-          <button className="link sc" onClick={() => setLang(nextLang)} aria-label={t('language')}>
+          <button className="link sc" onClick={() => setLang(nextLang)} aria-label={`${lang} · ${t('language')}`}>
             {lang}
           </button>
         }
@@ -143,7 +150,7 @@ function Home({ connected, send, openGuide }: { connected: boolean; send: Send; 
           <span className="caption">{t('roomCode')}</span>
           <span className="boxes">
             {[0, 1, 2, 3].map((i) => (
-              <span key={i} className={`box ${codeFocus && i === Math.min(code.length, 3) ? 'active' : ''}`}>
+              <span key={i} aria-hidden className={`box ${codeFocus && i === Math.min(code.length, 3) ? 'active' : ''}`}>
                 {code[i] ?? (codeFocus && i === code.length ? <span className="caret" /> : '')}
               </span>
             ))}
@@ -155,6 +162,7 @@ function Home({ connected, send, openGuide }: { connected: boolean; send: Send; 
               maxLength={4}
               autoCapitalize="characters"
               autoComplete="off"
+              enterKeyHint="go"
             />
           </span>
         </label>
@@ -195,16 +203,18 @@ function Create({
   const { t, rarity, rarityHint } = useI18n()
   const [playerCount, setPlayerCount] = useState(5)
   const [rarities, setRarities] = useState<Rarity[]>(['U', 'R', 'M'])
+  const playersId = useId()
+  const raritiesId = useId()
   const toggle = (id: Rarity) => setRarities((rs) => (rs.includes(id) ? rs.filter((x) => x !== id) : [...rs, id]))
 
   return (
     <>
-      <Bar left={<button className="link" onClick={back}>← {t('back')}</button>} />
+      <Bar left={<button className="link" onClick={back}><BackArrow />{t('back')}</button>} />
       <h1 className="title">{t('createTitle')}</h1>
       <p className="typeline">{t('createSubtitle')}</p>
 
-      <span className="caption gap">{t('players')}</span>
-      <div className="stepper">
+      <span className="caption gap" id={playersId}>{t('players')}</span>
+      <div className="stepper" role="group" aria-labelledby={playersId}>
         <button onClick={() => setPlayerCount((n) => n - 1)} disabled={playerCount <= 4} aria-label={t('fewerPlayers')}>
           −
         </button>
@@ -215,8 +225,8 @@ function Create({
       </div>
       <span className="muted italic center small">{t('playerRange')}</span>
 
-      <span className="caption gap">{t('rarities')}</span>
-      <div className="rows">
+      <span className="caption gap" id={raritiesId}>{t('rarities')}</span>
+      <div className="rows" role="group" aria-labelledby={raritiesId}>
         {RARITIES.map((id) => {
           const on = rarities.includes(id)
           return (
@@ -273,9 +283,10 @@ function Lobby({
   return (
     <>
       <Bar
-        left={<button className="link" onClick={leave}>← {t('leave')}</button>}
+        left={<button className="link" onClick={leave}><BackArrow />{t('leave')}</button>}
         right={<span className="sc">{room.players.length}/{room.settings.playerCount}</span>}
       />
+      <h1 className="sr-only">{t('roomTitle', { code: room.code })}</h1>
       <span className="caption gap">{t('roomCode')}</span>
       <span className="big-code">{room.code}</span>
       <button className="outline" onClick={share}>
@@ -335,17 +346,43 @@ function Lobby({
   )
 }
 
-function Reveal({ card, heading, hint, shown }: { card: Card; heading: string; hint: string; shown: boolean }) {
+function Reveal({
+  card,
+  heading,
+  hint,
+  shown,
+  onClose,
+}: {
+  card: Card
+  heading: string
+  hint: string
+  shown: boolean
+  onClose?: () => void
+}) {
   const { t, role, rarity } = useI18n()
+  const closeRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!shown || !onClose) return
+    const opener = document.activeElement as HTMLElement | null
+    closeRef.current?.focus()
+    return () => opener?.focus()
+  }, [shown])
+  const dialog = onClose && {
+    role: 'dialog',
+    'aria-modal': true,
+    'aria-label': heading,
+    onClick: onClose,
+    onKeyDown: (e: React.KeyboardEvent) => e.key === 'Escape' && onClose(),
+  }
   return (
     // always rendered so the image is loaded before the first reveal
-    <div className={`reveal ${shown ? 'shown' : ''}`} aria-hidden={!shown}>
+    <div className={`reveal ${shown ? 'shown' : ''} ${onClose ? 'closable' : ''}`} aria-hidden={!shown} {...dialog}>
       <Bar left={<span className="caption">{heading}</span>} />
       <p className={`role role-${card.role}`}>{role(card.role)}</p>
       <p className="typeline">
         {t('identityLine', { role: role(card.role) })} · {card.name}
       </p>
-      <img src={`/cards/${card.id}.jpg`} alt={card.name} draggable={false} />
+      <img src={`/cards/${card.id}.jpg`} alt="" draggable={false} />
       <p className="collector">
         <span title={rarity(card.rarity)}>
           {t('cardLine', {
@@ -355,7 +392,13 @@ function Reveal({ card, heading, hint, shown }: { card: Card; heading: string; h
             artist: card.artist,
           })}
         </span>
-        <span>{hint}</span>
+        {onClose ? (
+          <button ref={closeRef} className="hint">
+            {hint}
+          </button>
+        ) : (
+          <span>{hint}</span>
+        )}
       </p>
     </div>
   )
@@ -386,13 +429,13 @@ function Game({
   return (
     <>
       <Bar
-        left={<span className="sc">{t('roomTitle', { code: room.code })}</span>}
+        left={<h1 className="sc">{t('roomTitle', { code: room.code })}</h1>}
         right={<button className="link" onClick={leave}>{t('leave')}</button>}
       />
 
       {leader && (
         <section className="leader">
-          <img src={`/cards/${leader.card.id}.jpg`} alt={leader.card.name} />
+          <img src={`/cards/${leader.card.id}.jpg`} alt="" />
           <div>
             <div className="leader-top">
               <span className="leader-name">{leaderName}</span>
@@ -406,25 +449,40 @@ function Game({
         </section>
       )}
       {leader && (
-        <div className="closable" onClick={() => setLeaderShown(false)}>
-          <Reveal card={leader.card} heading={t('leaderOf', { name: leaderName })} hint={t('tapToClose')} shown={leaderShown} />
-        </div>
+        <Reveal
+          card={leader.card}
+          heading={t('leaderOf', { name: leaderName })}
+          hint={t('tapToClose')}
+          shown={leaderShown}
+          onClose={() => setLeaderShown(false)}
+        />
       )}
 
       {me && (
-        <div
-          className="secret"
-          onPointerDown={() => setShown(true)}
-          onPointerUp={hide}
-          onPointerLeave={hide}
-          onPointerCancel={hide}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <Diamond className="hollow huge" />
-          <span className="hold">{t('holdToReveal')}</span>
-          <span className="muted italic">{t('holdHint')}</span>
+        <>
+          <button
+            type="button"
+            className="secret"
+            aria-pressed={shown}
+            onPointerDown={() => setShown(true)}
+            onPointerUp={hide}
+            onPointerLeave={hide}
+            onPointerCancel={hide}
+            // detail 0 = Enter/Space: keyboard users toggle instead of holding
+            onClick={(e) => e.detail === 0 && setShown((v) => !v)}
+            onKeyDown={(e) => e.key === 'Escape' && hide()}
+            onBlur={hide}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <Diamond className="hollow huge" />
+            <span className="hold">{t('holdToReveal')}</span>
+            <span className="muted italic">{t('holdHint')}</span>
+          </button>
           <Reveal card={me} heading={t('yourIdentity')} hint={t('letGo')} shown={shown} />
-        </div>
+          <p className="sr-only" role="status">
+            {shown ? `${role(me.role)} · ${me.name}` : ''}
+          </p>
+        </>
       )}
 
       <p className="muted roster">{room.players.map((p) => p.name).join(' · ')}</p>
@@ -441,10 +499,21 @@ function Game({
 function Guide({ page, setPage, close }: { page: GuidePage; setPage: OpenGuide; close: () => void }) {
   const { t } = useI18n()
   const { catalog, failed } = useCatalog()
+  const backRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null
+    backRef.current?.focus()
+    return () => opener?.focus()
+  }, [])
   return (
-    <div className="guide" role="dialog" aria-modal>
+    <div className="guide" role="dialog" aria-modal aria-label={t(page)} onKeyDown={(e) => e.key === 'Escape' && close()}>
       <Bar
-        left={<button className="link" onClick={close}>← {t('back')}</button>}
+        left={
+          <button ref={backRef} className="link" onClick={close}>
+            <BackArrow />
+            {t('back')}
+          </button>
+        }
         right={
           <span className="tabs">
             {(['rules', 'cards'] as const).map((p) => (
@@ -558,11 +627,7 @@ function Gallery({ cards }: { cards: Card[] }) {
           })}
         </section>
       ))}
-      {open && (
-        <div className="closable" onClick={() => setOpen(null)}>
-          <Reveal card={open} heading={t('cards')} hint={t('tapToClose')} shown />
-        </div>
-      )}
+      {open && <Reveal card={open} heading={open.name} hint={t('tapToClose')} shown onClose={() => setOpen(null)} />}
     </div>
   )
 }
