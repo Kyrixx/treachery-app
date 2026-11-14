@@ -87,6 +87,7 @@ type Room struct {
 type Server struct {
 	mu    sync.Mutex
 	rooms map[string]*Room
+	file  string // room snapshot path, see persist.go; empty disables saving
 }
 
 func NewServer() *Server { return &Server{rooms: map[string]*Room{}} }
@@ -130,6 +131,8 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 		s.mu.Lock()
 		if err := s.handle(cl, &m); err != nil {
 			cl.write(map[string]any{"type": "error", "error": err})
+		} else {
+			s.save()
 		}
 		s.mu.Unlock()
 	}
@@ -292,9 +295,16 @@ func youMsg(p *Player) any {
 func (s *Server) sweep(now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	changed := false
+	defer func() {
+		if changed {
+			s.save()
+		}
+	}()
 	for code, room := range s.rooms {
 		if now.Sub(room.touched) > roomTTL {
 			delete(s.rooms, code)
+			changed = true
 			continue
 		}
 		if room.Phase != "lobby" {
@@ -306,9 +316,11 @@ func (s *Server) sweep(now time.Time) {
 		})
 		if len(room.Players) == 0 {
 			delete(s.rooms, code)
+			changed = true
 			continue
 		}
 		if len(room.Players) != before {
+			changed = true
 			if !slices.ContainsFunc(room.Players, func(p *Player) bool { return p.ID == room.HostID }) {
 				room.HostID = room.Players[0].ID
 			}

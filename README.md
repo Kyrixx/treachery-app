@@ -37,7 +37,7 @@ docker compose pull && docker compose up -d
 ```
 
 Caddy gets the HTTPS certificate automatically. To update: `docker compose pull && docker compose up -d`.
-Rooms live in memory: a restart ends the games in progress.
+Rooms are saved to `/data/rooms.json` (the `app_data` volume) on every change and restored on startup, so a restart or redeploy does not end games in progress. Set `DATA_FILE` to change the path (default `rooms.json` outside Docker).
 
 ## Credits
 

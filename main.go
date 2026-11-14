@@ -29,6 +29,7 @@ func routes(s *Server) http.Handler {
 
 func main() {
 	s := NewServer()
+	s.load(cmp.Or(os.Getenv("DATA_FILE"), "rooms.json"), time.Now())
 	go func() {
 		for now := range time.Tick(10 * time.Second) {
 			s.sweep(now)

@@ -1,0 +1,84 @@
+package main
+
+import (
+	"encoding/json"
+	"errors"
+	"io/fs"
+	"log"
+	"os"
+	"time"
+)
+
+// Snapshot types are separate from Player/Room on purpose: they hold tokens and
+// cards, so they must never be reused for anything sent to clients.
+type savedPlayer struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Token string `json:"token"`
+	Ready bool   `json:"ready"`
+	Card  *Card  `json:"card,omitempty"`
+}
+
+type savedRoom struct {
+	Code     string        `json:"code"`
+	Phase    string        `json:"phase"`
+	HostID   string        `json:"hostId"`
+	Settings Settings      `json:"settings"`
+	Players  []savedPlayer `json:"players"`
+	Touched  time.Time     `json:"touched"`
+}
+
+// load restores rooms from path and enables saving to it. A missing file is a
+// fresh start; a corrupt one is logged and ignored rather than blocking boot.
+func (s *Server) load(path string, now time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.file = path
+	data, err := os.ReadFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return
+	}
+	var saved []savedRoom
+	if err == nil {
+		err = json.Unmarshal(data, &saved)
+	}
+	if err != nil {
+		log.Printf("ignoring room snapshot %s: %v", path, err)
+		return
+	}
+	for _, sr := range saved {
+		room := &Room{Code: sr.Code, Phase: sr.Phase, HostID: sr.HostID, Settings: sr.Settings, touched: sr.Touched}
+		for _, sp := range sr.Players {
+			// everyone is disconnected after a reboot: give them the full lobby grace from now
+			room.Players = append(room.Players, &Player{ID: sp.ID, Name: sp.Name, token: sp.Token, Ready: sp.Ready, card: sp.Card, leftAt: now})
+		}
+		s.rooms[room.Code] = room
+	}
+	log.Printf("restored %d rooms from %s", len(saved), path)
+}
+
+// save must be called with s.mu held.
+// ponytail: rewrites the whole file under the global lock on every change, fine for a few rooms.
+func (s *Server) save() {
+	if s.file == "" {
+		return
+	}
+	saved := make([]savedRoom, 0, len(s.rooms))
+	for _, r := range s.rooms {
+		sr := savedRoom{Code: r.Code, Phase: r.Phase, HostID: r.HostID, Settings: r.Settings, Touched: r.touched}
+		for _, p := range r.Players {
+			sr.Players = append(sr.Players, savedPlayer{p.ID, p.Name, p.token, p.Ready, p.card})
+		}
+		saved = append(saved, sr)
+	}
+	data, _ := json.Marshal(saved)
+	// write then rename so a crash mid-write never leaves a truncated snapshot
+	tmp := s.file + ".tmp"
+	if err := os.WriteFile(tmp, data, 0o600); err != nil {
+		log.Printf("saving rooms: %v", err)
+		return
+	}
+	if err := os.Rename(tmp, s.file); err != nil {
+		log.Printf("saving rooms: %v", err)
+	}
+}
