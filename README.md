@@ -17,17 +17,25 @@ Tests : `go test -race ./...` et `cd web && npm test && npm run typecheck`.
 
 Pour rafraîchir les cartes depuis mtgtreachery.net : `go run ./tools/fetchcards`.
 
+## CI et image Docker
+
+GitHub Actions (`.github/workflows/ci.yml`) lance les tests Go et front à chaque push et PR.
+Sur `main`, l'image est publiée sur `ghcr.io/tchapuis/treachery-app` (tags `latest` et `sha-…`, plus `X.Y.Z` pour un tag `vX.Y.Z`).
+
 ## Déployer sur un VPS
 
 Prérequis : Docker, un (sous-)domaine qui pointe vers le VPS, ports 80 et 443 ouverts.
+L'image est privée : créer un token GitHub (classic) avec le seul scope `read:packages`.
 
 ```sh
-git clone <repo> treachery && cd treachery
-cp .env.example .env        # renseigner DOMAIN
-docker compose up -d --build
+mkdir treachery && cd treachery
+# copier docker-compose.yml et Caddyfile depuis le dépôt
+echo 'DOMAIN=treachery.example.com' > .env
+echo <TOKEN> | docker login ghcr.io -u tchapuis --password-stdin
+docker compose pull && docker compose up -d
 ```
 
-Caddy obtient le certificat HTTPS tout seul. Mettre à jour : `git pull && docker compose up -d --build`.
+Caddy obtient le certificat HTTPS tout seul. Mettre à jour : `docker compose pull && docker compose up -d`.
 Les rooms vivent en mémoire : un redémarrage coupe les parties en cours.
 
 ## Crédits
