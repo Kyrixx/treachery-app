@@ -57,6 +57,7 @@ export function useRoom() {
         }
       }
       sock.onmessage = (e) => {
+        if (sock !== ws.current) return
         const msg: ServerMsg = JSON.parse(e.data)
         switch (msg.type) {
           case 'welcome':
@@ -81,6 +82,7 @@ export function useRoom() {
               setPlayerId('')
               setRoom(null)
               setMe(null)
+              setError('Ta place dans la room a expiré. Rejoins-la à nouveau.')
               break
             }
             setError(msg.message)
@@ -88,6 +90,7 @@ export function useRoom() {
         }
       }
       sock.onclose = (e) => {
+        if (sock !== ws.current) return // a newer socket already replaced this one
         setConnected(false)
         if (e.code === 1008) {
           setKicked(true) // same seat opened on another device
@@ -115,8 +118,9 @@ export function useRoom() {
   }, [])
 
   const send = (msg: ClientMsg) => {
+    if (ws.current?.readyState !== WebSocket.OPEN) return
     setError('')
-    ws.current?.send(JSON.stringify(msg))
+    ws.current.send(JSON.stringify(msg))
   }
 
   const leave = () => {

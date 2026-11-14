@@ -95,8 +95,21 @@ input {
   -webkit-touch-callout: none;
   touch-action: none;
 }
-.secret:not(.shown) .reveal { visibility: hidden; position: absolute; inset: 0; overflow: hidden; }
-.secret.shown { border-style: solid; border-color: var(--accent); }
+.reveal {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: none;
+}
+.secret:not(.shown) .reveal { visibility: hidden; }
+.reveal .card { display: flex; flex-direction: column; align-items: center; min-height: 0; }
+.reveal .card img { max-height: 80dvh; width: auto; max-width: 100%; object-fit: contain; }
 .hold { color: var(--muted); font-size: 1.1rem; }
 .role { font-size: 1.6rem; font-weight: 700; margin: 0 0 10px; }
 .role-Traitor { color: #b98bf0; }

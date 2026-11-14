@@ -236,9 +236,9 @@ function Game({ room, playerId, me, send }: { room: RoomView; playerId: string; 
             onPointerCancel={() => setShown(false)}
             onContextMenu={(e) => e.preventDefault()}
           >
-            {!shown && <p className="hold">Maintiens appuyé pour voir ta carte</p>}
+            <p className="hold">Maintiens appuyé pour voir ta carte</p>
             {/* always rendered so the image is loaded before the first reveal */}
-            <div className="reveal">
+            <div className="reveal" aria-hidden={!shown}>
               <p className={`role role-${me.role}`}>{ROLE_FR[me.role]}</p>
               <CardFace card={me} />
             </div>
