@@ -1,23 +1,24 @@
 # Treachery app
 
-Tirage de rôles/identités Treachery (MTG) en temps réel, pour un groupe d'amis autour d'une table. Design : `docs/superpowers/specs/2026-11-14-treachery-app-design.md`.
+Real-time role and identity draw for the MTG Treachery variant, for a group of friends playing around one table, each on their phone.
 
-## Stack et versions
-- Backend Go 1.27, package `main` à la racine (`main.go`, `room.go`, `draw.go`). Seule dépendance : `github.com/coder/websocket`.
-- Front React 19 + Vite 8 + TypeScript 7 dans `web/`, buildé dans `web/dist` puis embarqué via `go:embed`.
-- Toujours viser les dernières versions stables (vérifier en ligne, pas de mémoire).
+## Stack and versions
+- Backend: Go 1.27, `main` package at the repo root (`main.go`, `room.go`, `draw.go`). Only dependency: `github.com/coder/websocket`.
+- Frontend: React 19 + Vite 8 + TypeScript 7 in `web/`, built into `web/dist` and embedded with `go:embed`.
+- Always target the latest stable versions (check online, not from memory).
 
-## Règles à respecter
-- Secret des identités : le serveur n'envoie jamais à un client la carte d'un autre joueur, sauf celle du Leader. `TestGameFlowKeepsIdentitiesSecret` le vérifie.
-- Aucun texte affiché en dur : tout passe par `web/src/i18n.ts` (`en` = référence, `fr` typé `Record<Key, string>` donc complet). Le serveur n'envoie que des codes d'erreur (`appError{Code, Params}`), traduits côté client via `error_<code>` ; `TestEveryErrorCodeIsTranslated` le vérifie.
-- Le format des messages WS est dupliqué : structs dans `room.go`, types dans `web/src/types.ts`. Modifier les deux.
-- Un mutex global protège tout l'état ; `handle` est appelé sous ce verrou.
-- `web/dist/.gitkeep` est commité et Vite a `emptyOutDir: false` : `go build` marche sur un clone neuf.
-- Images en anglais (`web/public/cards/<id>.jpg`) : les FR ne sont publiées que sur Google Drive.
+## Rules
+- Identity secrecy: the server never sends a client another player's card, except the Leader's. `TestGameFlowKeepsIdentitiesSecret` enforces it.
+- No hardcoded UI text: everything goes through `web/src/i18n.ts` (`en` is the reference, `fr` is typed `Record<Key, string>` so it must be complete). The server only sends error codes (`appError{Code, Params}`), translated client-side via `error_<code>`; `TestEveryErrorCodeIsTranslated` enforces it.
+- The WebSocket message format is duplicated: Go structs in `room.go`, TS types in `web/src/types.ts`. Change both.
+- One global mutex guards all state; `handle` runs under that lock.
+- `web/dist/.gitkeep` is committed and Vite uses `emptyOutDir: false`, so `go build` works on a fresh clone.
+- Card images are English (`web/public/cards/<id>.jpg`): French ones are only published on Google Drive.
+- Design docs under `docs/superpowers/` are local only (git-ignored).
 
-## Commandes
+## Commands
 - `go test -race ./...`
-- `cd web && npm test` (Vitest + jsdom ; `FakeSocket` dans `web/src/test/` pour piloter le WebSocket)
+- `cd web && npm test` (Vitest + jsdom; `FakeSocket` in `web/src/test/` drives the WebSocket)
 - `cd web && npm run build` / `npm run dev` / `npm run typecheck`
-- `go run ./tools/fetchcards` : régénère `cards.json` et les images
-- `docker compose up -d --build` avec `DOMAIN` dans `.env`
+- `go run ./tools/fetchcards`: regenerates `cards.json` and the images
+- CI (`.github/workflows/ci.yml`) tests every push/PR and publishes `ghcr.io/tchapuis/treachery-app` from `main`
